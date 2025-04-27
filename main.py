@@ -1,6 +1,7 @@
 import streamlit as st
 import openai
 import re
+import textstat
 
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
@@ -13,33 +14,34 @@ if "last_input_text" not in st.session_state:
 if "total_words_used" not in st.session_state:
     st.session_state.total_words_used = 0
 
-# === HUMANIZER v5.0 — Precision Academic Standard ===
+# === HUMANIZER ENGINE (rebuilt carefully to match user's examples) ===
+
 PROMPT = (
-    "Rewrite the following academic text to match a natural human writing style."
-    " Maintain a formal, neutral academic tone."
-    " Structure paragraphs logically: clear topic sentence, expansion, evidence, commentary, transition."
-    " Alternate sentence length: short (6–12 words), medium (12–20 words), long (20–35 words)."
-    " No more than two short or two long sentences in a row."
-    " Integrate natural transitions (such as 'however', 'thus', 'for example')."
-    " Insert slight purposeful redundancy for emphasis (but no random choppy fragments)."
-    " Always use active voice primarily, passive voice only if needed for flow."
-    " Use clear and accessible vocabulary (mid-academic), avoiding slang and overly advanced terms."
-    " Do not add new information. Do not invent or remove citations."
-    " Ensure the writing feels authentic, serious, and clearly human, suitable for academic purposes."
+    "Rewrite the following academic text to match real student-level writing, based on provided examples."
+    " Maintain formal but accessible academic tone."
+    " Structure paragraphs logically with a clear topic sentence, development, evidence, and conclusion."
+    " Alternate naturally between short (6–12 words), medium (12–20 words), and long (20–35 words) sentences."
+    " Avoid stacking more than two of the same length in a row."
+    " Allow mild repetition or slight rephrasing for emphasis, as seen in real student writing."
+    " Use accessible academic vocabulary without slang or ultra-complex words."
+    " Insert simple natural transitions (thus, because, however) without mechanical overuse."
+    " Preserve all original citations and factual content. No invention of new information."
+    " Ensure slight imperfections and a natural thoughtful rhythm, like a real student essay."
 )
 
 ACADEMIC_VOCAB_SIMPLIFY = {
     "utilize": "use",
     "subsequently": "then",
     "prioritize": "focus on",
+    "implementation": "process",
+    "prohibit": "prevent",
     "facilitate": "help",
     "demonstrate": "show",
-    "prohibit": "stop",
-    "implement": "carry out",
     "significant": "important",
-    "endeavor": "effort",
     "ameliorate": "improve",
     "commence": "begin",
+    "therefore": "thus",
+    "furthermore": "also"
 }
 
 def simplify_vocabulary(text):
@@ -48,10 +50,10 @@ def simplify_vocabulary(text):
     return text
 
 def enforce_sentence_structure(text):
-    sentences = re.split(r'(?<=[.!?]) +', text)
+    sentences = re.split(r'(?<=[.!?])\s+', text)
     final_sentences = []
     last_length_type = None
-    count_same_type = 0
+    same_type_count = 0
 
     for sentence in sentences:
         word_count = len(sentence.split())
@@ -63,21 +65,20 @@ def enforce_sentence_structure(text):
         else:
             length_type = "long"
 
-        if last_length_type == length_type:
-            count_same_type += 1
+        if length_type == last_length_type:
+            same_type_count += 1
         else:
-            count_same_type = 1
+            same_type_count = 1
             last_length_type = length_type
 
-        if count_same_type > 2:
+        if same_type_count > 2:
             if length_type == "short":
-                sentence = sentence + " Thus, it becomes clear."
+                sentence = sentence + " This idea supports the main point."
             elif length_type == "long":
-                parts = sentence.split(",")
+                parts = sentence.split(", ")
                 if len(parts) > 1:
-                    sentence = parts[0] + ". " + ",".join(parts[1:])
-
-            count_same_type = 1
+                    sentence = parts[0] + ". " + ", ".join(parts[1:])
+            same_type_count = 1
 
         final_sentences.append(sentence.strip())
 
@@ -87,7 +88,7 @@ def humanize_text(text):
     simplified_text = simplify_vocabulary(text)
     structured_text = enforce_sentence_structure(simplified_text)
 
-    full_prompt = f"{PROMPT}\n\n{structured_text}\n\nRewrite following the above instructions precisely."
+    full_prompt = f"{PROMPT}\n\n{structured_text}\n\nRewrite following the above instructions carefully."
 
     response = openai.chat.completions.create(
         model="gpt-4o",
@@ -95,14 +96,15 @@ def humanize_text(text):
             {"role": "system", "content": PROMPT},
             {"role": "user", "content": full_prompt}
         ],
-        temperature=0.5,
+        temperature=0.4,
         max_tokens=1600
     )
 
     result = response.choices[0].message.content.strip()
     return result
 
-# === UI (Unchanged) ===
+# === UI (Unchanged from original) ===
+
 st.markdown("""
 <style>
 .stApp { background-color: #0d0d0d; color: #00ffff; font-family: 'Segoe UI', monospace; text-align: center; }
@@ -146,30 +148,29 @@ if st.session_state.human_output:
     edited_output = st.text_area("Edit your result below:", value=st.session_state.human_output, height=300)
     st.session_state.human_output = edited_output
 
-    import textstat
     words = len(edited_output.split())
     score = round(textstat.flesch_reading_ease(edited_output), 1)
     st.markdown(f"**📊 Output Word Count:** {words} &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp; **🧠 Readability Score:** {score}%")
 
     st.download_button("💾 Download Output", data=edited_output, file_name="humanized_output.txt", mime="text/plain")
 
-st.markdown("**Version 5.0**")
+st.markdown("**Version 5.0 — Real Student Academic Mode**")
 st.markdown("---")
 st.markdown("""
 <div class='features-grid'>
     <div class='feature'>
         <strong>✍️ Natural Cadence:</strong><br>
-        Your words flow like a real student — no rigid AI rhythm.
+        Words flow like a real, thinking student.
     </div>
     <div class='vertical-divider'></div>
     <div class='feature'>
         <strong>🔁 Structured Variance:</strong><br>
-        Paragraphs are well balanced for human clarity.
+        Paragraphs breathe with short and long sentences naturally.
     </div>
     <div class='vertical-divider'></div>
     <div class='feature'>
         <strong>📚 Academic Realism:</strong><br>
-        The tone mimics thoughtful effort, not perfect computation.
+        Tone matches thoughtful university-level work — not polished editorials.
     </div>
 </div>
 """, unsafe_allow_html=True)
