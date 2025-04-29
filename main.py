@@ -13,7 +13,7 @@ if "previous_inputs" not in st.session_state:
 if "last_input_text" not in st.session_state:
     st.session_state.last_input_text = ""
 
-# === STUDENT-ESSAY STYLE GUIDELINES ===
+# === HUMANIZER ENGINE ===
 
 # 1. Banned casual fillers, contractions, slang
 BANNED_PHRASES = {
@@ -25,20 +25,19 @@ BANNED_PHRASES = {
 
 # 2. Informal → formal substitutions
 FORMAL_MAP = {
-    "don't": "do not",   "can't": "cannot",  "won't": "will not",
-    "it's": "it is",     "you're": "you are",
-    "gonna": "going to", "wanna": "want to",
-    "kinda": "rather",   "stuff": "items",
-    "a lot": "many",     "lots of": "many",
-    "really": "truly",   "very": "extremely", "just": "merely",
+    "don't": "do not",     "can't": "cannot",  "won't": "will not",
+    "it's": "it is",       "you're": "you are",
+    "gonna": "going to",   "wanna": "want to",
+    "kinda": "rather",     "stuff": "items",
+    "a lot": "many",       "lots of": "many",
+    "really": "truly",     "very": "extremely", "just": "merely",
     "basically": "fundamentally", "sort of": "somewhat"
 }
 
 def enforce_formality(sent: str) -> str:
-    """Replace informal tokens with their formal equivalents."""
+    """Substitute informal tokens with formal equivalents."""
     for informal, formal in FORMAL_MAP.items():
-        pattern = rf"\b{re.escape(informal)}\b"
-        sent = re.sub(pattern, formal, sent, flags=re.IGNORECASE)
+        sent = re.sub(rf"\b{re.escape(informal)}\b", formal, sent, flags=re.IGNORECASE)
     return sent
 
 def contains_banned(sent: str) -> bool:
@@ -46,28 +45,21 @@ def contains_banned(sent: str) -> bool:
     low = sent.lower()
     return any(phrase in low for phrase in BANNED_PHRASES)
 
-# 3. Common academic transitions for student essays
-TRANSITIONS = [
-    "Furthermore,", "However,", "For example,", "In contrast,",
-    "Moreover,", "Consequently,", "Therefore,"
-]
-
 def process_paragraph(par: str) -> str:
     """
-    Rewrite one paragraph into a 3–5 sentence student essay paragraph:
-      1) Topic sentence (~8–12 words)
-      2) 2–3 elaboration sentences (~18–25 words each), using at least one TRANSITION
-      3) Concluding sentence (~6–10 words)
-    Allow mild imperfections (e.g. leading ‘However,’). Enforce neutral-formal tone.
+    Paraphrase the entire paragraph, preserving all content, while:
+      • Alternating short (6–12 words) and long (20–30 words) sentences.
+      • Maintaining neutral-formal academic tone.
+      • Introducing mild imperfections (e.g. occasional fragments) and minor redundancies.
+      • NOT using banned fillers, slang, or contractions.
     """
-    style_block = f"""
-Rewrite the following paragraph to read like an authentic student essay paragraph:
-• Begin with a clear topic sentence (~8–12 words).
-• Include 2–3 elaboration sentences (~18–25 words each), using at least one of: {', '.join(TRANSITIONS)}.
-• End with a concise concluding sentence (~6–10 words).
-• Vary sentence lengths; mild imperfections (e.g. a leading ‘However,’ fragment) are okay.
-• Tone: neutral-formal academic.
-• Do NOT use banned fillers or contractions.
+    style_block = """
+Rewrite the following paragraph in full (do not summarize or omit any
+information), but rephrase it in a neutral-formal academic tone. Alternate
+between short (6–12 words) and long (20–30 words) sentences. Introduce mild
+imperfections (e.g. occasional sentence fragments) and minor redundancies
+(e.g. echoing a key term once per paragraph). Do NOT use banned fillers,
+slang, or contractions.
 """
     prompt = style_block + "\nOriginal paragraph:\n" + par
     resp = openai.chat.completions.create(
@@ -77,17 +69,14 @@ Rewrite the following paragraph to read like an authentic student essay paragrap
             {"role": "user",   "content": prompt}
         ],
         temperature=0.75,
-        max_tokens=200
+        max_tokens=len(par.split()) * 3
     )
     out = resp.choices[0].message.content.strip()
     out = enforce_formality(out)
-    # remove any lines containing banned phrases
-    return "\n\n".join(
-        line for line in out.split("\n") if line and not contains_banned(line)
-    )
+    return out
 
 def humanize_text(text: str) -> str:
-    """Apply student-essay style rewriting paragraph by paragraph."""
+    """Apply full-paragraph paraphrasing with our student-essay style rules."""
     paras = [p.strip() for p in text.split("\n\n") if p.strip()]
     rewritten = [process_paragraph(p) for p in paras]
     return "\n\n".join(rewritten)
