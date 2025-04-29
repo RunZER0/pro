@@ -13,130 +13,123 @@ if "previous_inputs" not in st.session_state:
 if "last_input_text" not in st.session_state:
     st.session_state.last_input_text = ""
 
-# === HUMANIZER v4.2.1 — Precision Student Mode ===
-PROMPT = (
-    "Rewrite the following academic content like a real student would:"
-    " Maintain clarity and academic tone, but alternate between full, structured sentences and short, blunt ones."
-    " Use 1–2 choppy lines per paragraph to emphasize key ideas."
-    " Add mild imperfection: echo phrases, sentence fragments, and plain transitions like 'Still' or 'This matters.'"
-    " Do not over-smooth. Let it feel like real writing."
-    " Do not add new facts. Preserve all in-text citations and formatting."
-)
+# === FORMALITY RULES ===
 
-SYNONYMS = {
-    "utilize": "use",
-    "therefore": "so",
-    "subsequently": "then",
-    "prioritize": "focus on",
-    "implementation": "doing",
-    "prohibit": "stop",
-    "facilitate": "help",
-    "demonstrate": "show",
-    "significant": "big",
-    "furthermore": "also"
+# 1. Banned phrases/words (no casual fillers, contractions, slang)
+BANNED_PHRASES = {
+    "still", "this matters", "commentary",
+    "don't", "can't", "won't", "it's", "you're", "they're",
+    "gonna", "wanna", "kinda", "basically", "sort of", "stuff",
+    "a lot", "lots of", "really", "very", "just", "quite"
 }
 
-def downgrade_vocab(text):
-    for word, simple in SYNONYMS.items():
-        text = re.sub(rf'\b{word}\b', simple, text, flags=re.IGNORECASE)
-    return text
+# 2. Informal → formal substitutions
+FORMAL_MAP = {
+    "don't": "do not",     "can't": "cannot",   "won't": "will not",
+    "it's": "it is",       "you're": "you are",
+    "gonna": "going to",   "wanna": "want to",
+    "kinda": "rather",     "stuff": "items",
+    "a lot": "many",       "lots of": "many",
+    "really": "truly",     "very": "extremely", "just": "merely",
+    "basically": "fundamentally", "sort of": "somewhat"
+}
 
-def paragraph_balancer(text):
-    paragraphs = text.split('\n')
-    balanced = []
-    for p in paragraphs:
-        sentences = re.split(r'(?<=[.!?])\s+', p)
-        buffer = []
-        chop_count = 0
-        for s in sentences:
-            s_clean = s.strip()
-            if not s_clean:
-                continue
-            if len(s_clean.split()) > 20:
-                buffer.append(s_clean)
-            elif chop_count < 2:
-                buffer.append(s_clean)
-                chop_count += 1
-            else:
-                combined = s_clean + (" " + random.choice(["Still.", "This matters.", "Even then."]) if random.random() < 0.3 else "")
-                buffer.append(combined)
-        balanced.append(" ".join(buffer))
-    return "\n\n".join(balanced)
+def enforce_formality(sent: str) -> str:
+    """Substitute informal tokens with formal equivalents."""
+    for informal, formal in FORMAL_MAP.items():
+        pattern = rf"\b{re.escape(informal)}\b"
+        sent = re.sub(pattern, formal, sent, flags=re.IGNORECASE)
+    return sent
 
-def insert_redundancy(text):
-    lines = re.split(r'(?<=[.!?])\s+', text)
-    output = []
-    for i, line in enumerate(lines):
-        output.append(line)
-        if random.random() < 0.15 and len(line.split()) > 6:
-            output.append(f"This shows that {line.strip().split()[0].lower()} is important.")
-    return " ".join(output)
-
-# ——— New: context-aware fragments ———
-TRANSITION = ["Still.", "That said.", "On the other hand."]
-EMPHASIS   = ["Key point.", "It’s worth noting."]
-CAVEAT     = ["Could be debated.", "Potential flaw."]
-
-def select_injection_points(sentences, max_per_para=2):
-    # score by presence of “important” keywords
-    scores = [
-        sum(1 for kw in ["important","key","show","demonstrate","issue","risk"] if kw in s.lower())
-        for s in sentences
-    ]
-    # pick top max_per_para indexes
-    idxs = sorted(range(len(sentences)), key=lambda i: scores[i], reverse=True)[:max_per_para]
-    return set(idxs)
-
-def choose_fragment(sent):
+def contains_banned(sent: str) -> bool:
+    """Detect any banned phrase."""
     low = sent.lower()
-    if any(w in low for w in ["however","but","yet"]):
-        return random.choice(TRANSITION)
-    if any(w in low for w in ["show","demonstrate","important","key"]):
-        return random.choice(EMPHASIS)
-    if any(w in low for w in ["risk","problem","issue","flaw"]):
-        return random.choice(CAVEAT)
-    return random.choice(TRANSITION + EMPHASIS)
+    return any(phrase in low for phrase in BANNED_PHRASES)
 
-# ——— Modified injector with per-paragraph cap & weighted probability ———
-def inject_choppy_fragments(text, max_per_para=2):
-    paras = text.split("\n\n")
-    out_paras = []
+# === ROLE-BASED CHUNKING & LENGTH TARGETS ===
+
+ROLE_LENGTHS = {
+    "claim":         (6, 12),
+    "transition":    (6, 12),
+    "evidence":      (20, 30),
+    "interpretation":(20, 30),
+    "conclusion":    (6, 12),
+}
+
+def select_role(sent: str, idx: int, total: int) -> str:
+    low = sent.lower()
+    if idx == 0:
+        return "claim"
+    if idx == total - 1:
+        return "conclusion"
+    if any(w in low for w in ["however", "but", "yet", "on the other hand"]):
+        return "transition"
+    if any(w in low for w in ["suggests", "demonstrates", "indicates", "shows"]):
+        return "interpretation"
+    return "evidence"
+
+def annotate_chunks(text: str):
+    """Split text into (sentence, role) pairs."""
+    paras = [p for p in text.split("\n\n") if p.strip()]
+    annotated = []
     for p in paras:
-        sentences = re.split(r'(?<=[.!?])\s+', p)
-        inject_idxs = select_injection_points(sentences, max_per_para)
-        new = []
-        for i, s in enumerate(sentences):
-            new.append(s)
-            # weight by sentence length (10–50 words => higher chance)
-            prob = min(max(len(s.split())/20, 0.1), 0.5)
-            if i in inject_idxs and random.random() < prob:
-                new.append(choose_fragment(s))
-        out_paras.append(" ".join(new))
-    return "\n\n".join(out_paras)
+        sents = re.split(r'(?<=[.!?])\s+', p)
+        total = len(sents)
+        for i, s in enumerate(sents):
+            cleaned = s.strip()
+            if cleaned:
+                role = select_role(cleaned, i, total)
+                annotated.append((cleaned, role))
+    return annotated
 
-def humanize_text(text):
-    simplified = downgrade_vocab(text)
-    structured = paragraph_balancer(simplified)
-    echoed = insert_redundancy(structured)
-    # call with tamed randomness
-    chopped = inject_choppy_fragments(echoed, max_per_para=2)
+# === HUMANIZE FUNCTION ===
 
-    full_prompt = f"{PROMPT}\n\n{chopped}\n\nRewrite this with the tone and structure described above."
+SYSTEM_STYLE = """
+You are rewriting in a neutral-formal academic register.
+Style guidelines:
+ • No contractions or slang.
+ • No filler words (e.g. very, just, really).
+ • Do NOT use: still; this matters; commentary.
+ • Observe the role's target word count exactly.
+"""
 
-    response = openai.chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": PROMPT},
-            {"role": "user", "content": full_prompt}
-        ],
-        temperature=0.85,
-        max_tokens=1600
+def humanize_text(text: str) -> str:
+    # 1. Pre-clean: apply formal map and drop empty paras
+    cleaned = "\n\n".join(
+        enforce_formality(p).strip()
+        for p in text.split("\n\n") if p.strip()
     )
-
-    result = response.choices[0].message.content.strip()
-    return result
+    # 2. Chunk & tag roles
+    annotated = annotate_chunks(cleaned)
+    # 3. Generate each sentence
+    outputs = []
+    for chunk, role in annotated:
+        lo, hi = ROLE_LENGTHS[role]
+        prompt = (
+            f"{SYSTEM_STYLE}\n"
+            f"Role: {role}\n"
+            f"Target length: {lo}–{hi} words\n\n"
+            f"Rewrite:\n{chunk}"
+        )
+        resp = openai.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system",  "content": SYSTEM_STYLE},
+                {"role": "user",    "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens= hi * 3
+        )
+        sent = resp.choices[0].message.content.strip()
+        # 4. Post-process: enforce formality & drop banned
+        sent = enforce_formality(sent)
+        if not contains_banned(sent):
+            outputs.append(sent)
+    # 5. Reassemble
+    return " ".join(outputs)
 
 # === UI (v4.4 layout with v4.5 label) ===
+
 st.markdown("""
 <style>
 .stApp { background-color: #0d0d0d; color: #00ffff; font-family: 'Segoe UI', monospace; text-align: center; }
@@ -152,7 +145,6 @@ textarea { background-color: #121212 !important; color: #ffffff !important; bord
 """, unsafe_allow_html=True)
 
 # … the rest of your UI code remains unchanged …
-
 st.markdown('<div class="centered-container"><h1>🤖 InfiniAi-Humanizer</h1><p>Turn robotic AI text into real, natural, human-sounding writing.</p></div>', unsafe_allow_html=True)
 
 input_text = st.text_area("Paste your AI-generated academic text below (Max: 10,000 characters):", height=280, max_chars=10000)
