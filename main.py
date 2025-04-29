@@ -155,7 +155,7 @@ def humanize_text(text):
     t = paragraph_balancer(t)
     t = insert_redundancy(t)
 
-    full_prompt = f"{PROMPT}\n\n{t}\n\nRewrite precisely as above."
+    full_prompt = f"{PROMPT}\n\n{t}\n\nparaphrase precisely as above."
 
     response = openai.chat.completions.create(
         model="gpt-4o",
