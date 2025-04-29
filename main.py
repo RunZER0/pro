@@ -13,76 +13,104 @@ if "previous_inputs" not in st.session_state:
 if "last_input_text" not in st.session_state:
     st.session_state.last_input_text = ""
 
-# === HUMANIZER ENGINE ===
+# === HUMANIZER v4.2.1 — Precision Student Mode ===
+PROMPT = (
+    "Rewrite the following academic content like a real student would:"
+    " Maintain clarity and academic tone, but alternate between full, structured sentences and short, blunt ones."
+    " Use 1–2 choppy lines per paragraph to emphasize key ideas."
+    " Add mild imperfection: echo phrases and sentence fragments."
+    " Do not over-smooth. Let it feel like real writing."
+    " Do not add new facts. Preserve all in-text citations and formatting."
+)
 
-# 1. Banned casual fillers, contractions, slang
-BANNED_PHRASES = {
-    "still", "this matters", "commentary",
-    "don't", "can't", "won't", "it's", "you're", "they're",
-    "gonna", "wanna", "kinda", "basically", "sort of", "stuff",
-    "a lot", "lots of", "really", "very", "just", "quite"
+SYNONYMS = {
+    "utilize": "use",
+    "therefore": "so",
+    "subsequently": "then",
+    "prioritize": "focus on",
+    "implementation": "doing",
+    "prohibit": "stop",
+    "facilitate": "help",
+    "demonstrate": "show",
+    "significant": "big",
+    "furthermore": "also"
 }
 
-# 2. Informal → formal substitutions
-FORMAL_MAP = {
-    "don't": "do not",     "can't": "cannot",  "won't": "will not",
-    "it's": "it is",       "you're": "you are",
-    "gonna": "going to",   "wanna": "want to",
-    "kinda": "rather",     "stuff": "items",
-    "a lot": "many",       "lots of": "many",
-    "really": "truly",     "very": "extremely", "just": "merely",
-    "basically": "fundamentally", "sort of": "somewhat"
-}
+def downgrade_vocab(text):
+    for word, simple in SYNONYMS.items():
+        text = re.sub(rf'\b{word}\b', simple, text, flags=re.IGNORECASE)
+    return text
 
-def enforce_formality(sent: str) -> str:
-    """Substitute informal tokens with formal equivalents."""
-    for informal, formal in FORMAL_MAP.items():
-        sent = re.sub(rf"\b{re.escape(informal)}\b", formal, sent, flags=re.IGNORECASE)
-    return sent
+def paragraph_balancer(text):
+    paragraphs = text.split('\n')
+    balanced = []
+    for p in paragraphs:
+        sentences = re.split(r'(?<=[.!?])\s+', p)
+        buffer = []
+        chop_count = 0
+        for s in sentences:
+            s_clean = s.strip()
+            if not s_clean:
+                continue
+            if len(s_clean.split()) > 20:
+                buffer.append(s_clean)
+            elif chop_count < 2:
+                buffer.append(s_clean)
+                chop_count += 1
+            else:
+                # Removed casual commentary injection
+                buffer.append(s_clean)
+        balanced.append(" ".join(buffer))
+    return "\n\n".join(balanced)
 
-def contains_banned(sent: str) -> bool:
-    """Detect any banned phrase."""
-    low = sent.lower()
-    return any(phrase in low for phrase in BANNED_PHRASES)
+def insert_redundancy(text):
+    lines = re.split(r'(?<=[.!?])\s+', text)
+    output = []
+    for i, line in enumerate(lines):
+        output.append(line)
+        if random.random() < 0.15 and len(line.split()) > 6:
+            output.append(f"This shows that {line.strip().split()[0].lower()} is important.")
+    return " ".join(output)
 
-def process_paragraph(par: str) -> str:
-    """
-    Paraphrase the entire paragraph, preserving all content, while:
-      • Alternating short (6–12 words) and long (20–30 words) sentences.
-      • Maintaining neutral-formal academic tone.
-      • Introducing mild imperfections (e.g. occasional fragments) and minor redundancies.
-      • NOT using banned fillers, slang, or contractions.
-    """
-    style_block = """
-Rewrite the following paragraph in full (do not summarize or omit any
-information), but rephrase it in a neutral-formal academic tone. Alternate
-between short (6–12 words) and long (20–30 words) sentences. Introduce mild
-imperfections (e.g. occasional sentence fragments) and minor redundancies
-(e.g. echoing a key term once per paragraph). Do NOT use banned fillers,
-slang, or contractions.
-"""
-    prompt = style_block + "\nOriginal paragraph:\n" + par
-    resp = openai.chat.completions.create(
+def inject_choppy_fragments(text):
+    additions = [
+        "That’s significant.", "It’s worth noting.", "Don’t ignore this.", "Key point.",
+        "Even then.", "That said.", "On the other hand.", "Then again.",
+        "Not always.", "Could be debated.", "That’s one view.", "It’s not that simple.",
+        "There’s more to it.", "That’s the issue.", "Potential flaw.", "Risk worth considering.",
+        "Could break under pressure.", "Weak point.", "Makes sense in context.",
+        "That explains it.", "Fits the pattern.", "Shows something deeper.", "Hard to ignore."
+    ]  # 'Still.' and 'This matters.' have been removed
+    sentences = re.split(r'(?<=[.!?])\s+', text)
+    result = []
+    for s in sentences:
+        result.append(s)
+        if random.random() < 0.18:
+            result.append(random.choice(additions))
+    return " ".join(result)
+
+def humanize_text(text):
+    simplified = downgrade_vocab(text)
+    structured = paragraph_balancer(simplified)
+    echoed = insert_redundancy(structured)
+    chopped = inject_choppy_fragments(echoed)
+
+    full_prompt = f"{PROMPT}\n\n{chopped}\n\nRewrite this with the tone and structure described above."
+
+    response = openai.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {"role": "system", "content": style_block},
-            {"role": "user",   "content": prompt}
+            {"role": "system", "content": PROMPT},
+            {"role": "user", "content": full_prompt}
         ],
-        temperature=0.75,
-        max_tokens=len(par.split()) * 3
+        temperature=0.85,
+        max_tokens=1600
     )
-    out = resp.choices[0].message.content.strip()
-    out = enforce_formality(out)
-    return out
 
-def humanize_text(text: str) -> str:
-    """Apply full-paragraph paraphrasing with our student-essay style rules."""
-    paras = [p.strip() for p in text.split("\n\n") if p.strip()]
-    rewritten = [process_paragraph(p) for p in paras]
-    return "\n\n".join(rewritten)
+    result = response.choices[0].message.content.strip()
+    return result
 
 # === UI (v4.4 layout with v4.5 label) ===
-
 st.markdown("""
 <style>
 .stApp { background-color: #0d0d0d; color: #00ffff; font-family: 'Segoe UI', monospace; text-align: center; }
