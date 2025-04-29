@@ -1,7 +1,8 @@
 import streamlit as st
 import openai
-import re
+import random
 import textstat
+import re
 
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
@@ -11,84 +12,87 @@ if "previous_inputs" not in st.session_state:
     st.session_state.previous_inputs = {}
 if "last_input_text" not in st.session_state:
     st.session_state.last_input_text = ""
-if "total_words_used" not in st.session_state:
-    st.session_state.total_words_used = 0
 
-# === HUMANIZER ENGINE (rebuilt carefully to match user's examples) ===
-
+# === HUMANIZER v4.2.1 — Precision Student Mode ===
 PROMPT = (
-    "Rewrite the following academic text to match real student-level writing, based on provided examples."
-    " Maintain formal but accessible academic tone."
-    " Structure paragraphs logically with a clear topic sentence, development, evidence, and conclusion."
-    " Alternate naturally between short (6–12 words), medium (12–20 words), and long (20–35 words) sentences."
-    " Avoid stacking more than two of the same length in a row."
-    " Allow mild repetition or slight rephrasing for emphasis, as seen in real student writing."
-    " Use accessible academic vocabulary without slang or ultra-complex words."
-    " Insert simple natural transitions (thus, because, however) without mechanical overuse."
-    " Preserve all original citations and factual content. No invention of new information."
-    " Ensure slight imperfections and a natural thoughtful rhythm, like a real student essay."
+    "Rewrite the following academic content like a real student would:"
+    " Maintain clarity and academic tone, but alternate between full, structured sentences and short, blunt ones."
+    " Use 1–2 choppy lines per paragraph to emphasize key ideas."
+    " Add mild imperfection: echo phrases, sentence fragments, and plain transitions like 'Still' or 'This matters.'"
+    " Do not over-smooth. Let it feel like real writing."
+    " Do not add new facts. Preserve all in-text citations and formatting."
 )
 
-ACADEMIC_VOCAB_SIMPLIFY = {
+SYNONYMS = {
     "utilize": "use",
+    "therefore": "so",
     "subsequently": "then",
     "prioritize": "focus on",
-    "implementation": "process",
-    "prohibit": "prevent",
+    "implementation": "doing",
+    "prohibit": "stop",
     "facilitate": "help",
     "demonstrate": "show",
-    "significant": "important",
-    "ameliorate": "improve",
-    "commence": "begin",
-    "therefore": "thus",
+    "significant": "big",
     "furthermore": "also"
 }
 
-def simplify_vocabulary(text):
-    for complex_word, simple_word in ACADEMIC_VOCAB_SIMPLIFY.items():
-        text = re.sub(rf'\b{complex_word}\b', simple_word, text, flags=re.IGNORECASE)
+def downgrade_vocab(text):
+    for word, simple in SYNONYMS.items():
+        text = re.sub(rf'\b{word}\b', simple, text, flags=re.IGNORECASE)
     return text
 
-def enforce_sentence_structure(text):
+def paragraph_balancer(text):
+    paragraphs = text.split('\n')
+    balanced = []
+    for p in paragraphs:
+        sentences = re.split(r'(?<=[.!?])\s+', p)
+        buffer = []
+        chop_count = 0
+        for s in sentences:
+            s_clean = s.strip()
+            if not s_clean:
+                continue
+            if len(s_clean.split()) > 20:
+                buffer.append(s_clean)
+            elif chop_count < 2:
+                buffer.append(s_clean)
+                chop_count += 1
+            else:
+                combined = s_clean + (" " + random.choice(["Still.", "This matters.", "Even then."]) if random.random() < 0.3 else "")
+                buffer.append(combined)
+        balanced.append(" ".join(buffer))
+    return "\n\n".join(balanced)
+
+def insert_redundancy(text):
+    lines = re.split(r'(?<=[.!?])\s+', text)
+    output = []
+    for i, line in enumerate(lines):
+        output.append(line)
+        if random.random() < 0.15 and len(line.split()) > 6:
+            output.append(f"This shows that {line.strip().split()[0].lower()} is important.")
+    return " ".join(output)
+
+def inject_choppy_fragments(text):
+    additions = ["This matters.", "That’s significant.", "It’s worth noting.", "Don’t ignore this.", "Key point.",
+    "Still.", "Even then.", "That said.", "On the other hand.", "Then again.",
+    "Not always.", "Could be debated.", "That’s one view.", "It’s not that simple.", "There’s more to it.",
+    "That’s the issue.", "Potential flaw.", "Risk worth considering.", "Could break under pressure.", "Weak point.",
+    "Makes sense in context.", "That explains it.", "Fits the pattern.", "Shows something deeper.", "Hard to ignore."]
     sentences = re.split(r'(?<=[.!?])\s+', text)
-    final_sentences = []
-    last_length_type = None
-    same_type_count = 0
-
-    for sentence in sentences:
-        word_count = len(sentence.split())
-
-        if word_count <= 12:
-            length_type = "short"
-        elif word_count <= 20:
-            length_type = "medium"
-        else:
-            length_type = "long"
-
-        if length_type == last_length_type:
-            same_type_count += 1
-        else:
-            same_type_count = 1
-            last_length_type = length_type
-
-        if same_type_count > 2:
-            if length_type == "short":
-                sentence = sentence + " This idea supports the main point."
-            elif length_type == "long":
-                parts = sentence.split(", ")
-                if len(parts) > 1:
-                    sentence = parts[0] + ". " + ", ".join(parts[1:])
-            same_type_count = 1
-
-        final_sentences.append(sentence.strip())
-
-    return " ".join(final_sentences)
+    result = []
+    for s in sentences:
+        result.append(s)
+        if random.random() < 0.18:
+            result.append(random.choice(additions))
+    return " ".join(result)
 
 def humanize_text(text):
-    simplified_text = simplify_vocabulary(text)
-    structured_text = enforce_sentence_structure(simplified_text)
+    simplified = downgrade_vocab(text)
+    structured = paragraph_balancer(simplified)
+    echoed = insert_redundancy(structured)
+    chopped = inject_choppy_fragments(echoed)
 
-    full_prompt = f"{PROMPT}\n\n{structured_text}\n\nRewrite following the above instructions carefully."
+    full_prompt = f"{PROMPT}\n\n{chopped}\n\nRewrite this with the tone and structure described above."
 
     response = openai.chat.completions.create(
         model="gpt-4o",
@@ -96,15 +100,14 @@ def humanize_text(text):
             {"role": "system", "content": PROMPT},
             {"role": "user", "content": full_prompt}
         ],
-        temperature=0.4,
+        temperature=0.85,
         max_tokens=1600
     )
 
     result = response.choices[0].message.content.strip()
     return result
 
-# === UI (Unchanged from original) ===
-
+# === UI (v4.4 layout with v4.5 label) ===
 st.markdown("""
 <style>
 .stApp { background-color: #0d0d0d; color: #00ffff; font-family: 'Segoe UI', monospace; text-align: center; }
@@ -127,11 +130,6 @@ if len(input_text) > 10000:
     st.warning("⚠️ Your input is over 10,000 characters. Only the first 10,000 characters will be used.")
 st.markdown(f"**{len(input_text.split())} Words, {len(input_text)} Characters**")
 
-current_count = len(input_text.split())
-if st.session_state.total_words_used + current_count > 700:
-    st.error("🚫 Trial limit reached: You’ve used your 700-word quota. Please upgrade to Pro for unlimited access.")
-    st.stop()
-
 if st.button("🔁 Humanize / Re-Humanize Text"):
     if input_text.strip():
         trimmed_input = input_text[:10000]
@@ -139,7 +137,6 @@ if st.button("🔁 Humanize / Re-Humanize Text"):
             output = humanize_text(trimmed_input)
             st.session_state.human_output = output
             st.session_state.last_input_text = trimmed_input
-            st.session_state.total_words_used += len(trimmed_input.split())
     else:
         st.warning("Please enter some text first.")
 
@@ -154,23 +151,32 @@ if st.session_state.human_output:
 
     st.download_button("💾 Download Output", data=edited_output, file_name="humanized_output.txt", mime="text/plain")
 
-st.markdown("**Version 5.0 — Real Student Academic Mode**")
+st.markdown("**Version 4.5**")
 st.markdown("---")
 st.markdown("""
 <div class='features-grid'>
     <div class='feature'>
         <strong>✍️ Natural Cadence:</strong><br>
-        Words flow like a real, thinking student.
+        Your words flow like a real student — no rigid AI rhythm.
     </div>
     <div class='vertical-divider'></div>
     <div class='feature'>
         <strong>🔁 Structured Variance:</strong><br>
-        Paragraphs breathe with short and long sentences naturally.
+        Paragraphs are well balanced for human clarity.
     </div>
     <div class='vertical-divider'></div>
     <div class='feature'>
         <strong>📚 Academic Realism:</strong><br>
-        Tone matches thoughtful university-level work — not polished editorials.
+        The tone mimics thoughtful effort, not perfect computation.
+    </div>
+</div>
+
+<div class='features-grid'>
+    <div class='comment'>
+        <em>"This actually sounds like I wrote it after a long study night."</em><br><strong>- Joseph</strong>
+    </div>
+    <div class='comment'>
+        <em>"Passed the AI check with flying colors. And my professor said it felt authentic."</em><br><strong>- Kate</strong>
     </div>
 </div>
 """, unsafe_allow_html=True)
