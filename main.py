@@ -13,7 +13,7 @@ if "previous_inputs" not in st.session_state:
 if "last_input_text" not in st.session_state:
     st.session_state.last_input_text = ""
 
-# === HUMANIZER v5.0 — Precision Student Mode with Essay-Inspired Flaws ===
+# === HUMANIZER v5.1 — Enhanced Imperfections Mode ===
 PROMPT = (
     "Rewrite the following academic content like a real student would, preserving all citations and formatting."
     " Introduce imperfections: run-on sentences, sentence fragments, inconsistent punctuation or capitalization,"
@@ -40,76 +40,66 @@ def downgrade_vocab(text):
         text = re.sub(rf"\b{word}\b", simple, text, flags=re.IGNORECASE)
     return text
 
-# Introduce run-on sentences by appending an extra clause without proper punctuation
+# Increase flaw probabilities
+
 def introduce_run_on(text):
     lines = re.split(r'(?<=[.!?])\s+', text)
     result = []
     for line in lines:
-        if random.random() < 0.3 and len(line.split()) > 8:
+        if random.random() < 0.5 and len(line.split()) > 6:
             result.append(line + ", and i also want to add something more without proper separation")
         else:
             result.append(line)
     return " ".join(result)
 
-# Introduce fragments by truncating sentences
 def introduce_fragments(text):
     sentences = re.split(r'(?<=[.!?])\s+', text)
     result = []
     for s in sentences:
-        if random.random() < 0.2 and len(s.split()) > 6:
+        if random.random() < 0.4 and len(s.split()) > 8:
             fragment = ' '.join(s.split()[:5])
             result.append(fragment)
         else:
             result.append(s)
     return " ".join(result)
 
-# Garble punctuation and capitalization
 def garble_punctuation(text):
-    # Remove spaces after periods
-    if random.random() < 0.2:
+    if random.random() < 0.3:
         text = re.sub(r'\. ', '.', text)
-    # Lowercase sentence starts
     sentences = re.split(r'(?<=[.!?])\s+', text)
     for i, s in enumerate(sentences):
-        if random.random() < 0.1 and s:
+        if random.random() < 0.2 and s:
             sentences[i] = s[0].lower() + s[1:]
     return ' '.join(sentences)
 
-# Introduce subject-verb disagreements for 'they'
 def subject_verb_disagree(text):
     return re.sub(r'\bthey (\w+)s\b', r'they \1', text)
 
-# Overuse passive voice by prefixing 'was'
 def passive_overuse(text):
     sentences = re.split(r'(?<=[.!?])\s+', text)
     for i, s in enumerate(sentences):
-        if random.random() < 0.25 and len(s.split()) > 5:
+        if random.random() < 0.5 and len(s.split()) > 5:
             sentences[i] = 'was ' + s
     return ' '.join(sentences)
 
-# Limit parallelism by breaking up parallel lists randomly
 def limit_parallelism(text):
     return re.sub(r"\b(and|or) ([a-z]+), ([a-z]+)\b", r"\1 \2 and also \3", text)
 
-# Insert uneven transitions at random
 def uneven_transitions(text):
     transitions = ['However,', 'Moreover,', 'For example,', 'But,', 'Yet,']
     sentences = re.split(r'(?<=[.!?])\s+', text)
     result = []
     for s in sentences:
         result.append(s)
-        if random.random() < 0.2:
+        if random.random() < 0.4:
             result.append(random.choice(transitions))
     return ' '.join(result)
 
-# Remove any remaining casual commentary phrases
 def remove_casual_comments(text):
     patterns = [r'I think', r'you know', r'really matters']
     for pat in patterns:
         text = re.sub(pat, '', text, flags=re.IGNORECASE)
     return text
-
-# Apply paragraph balancing with choppy lines preserved
 
 def paragraph_balancer(text):
     paragraphs = text.split('\n\n')
@@ -119,7 +109,7 @@ def paragraph_balancer(text):
         buffer = []
         chops = 0
         for s in sentences:
-            if len(s.split()) > 20:
+            if len(s.split()) > 15 or random.random() < 0.3:
                 buffer.append(s)
             elif chops < 2:
                 buffer.append(s)
@@ -129,19 +119,17 @@ def paragraph_balancer(text):
         balanced.append(' '.join(buffer))
     return '\n\n'.join(balanced)
 
-# Insert redundant phrases mimicking student repetition
 def insert_redundancy(text):
     lines = re.split(r'(?<=[.!?])\s+', text)
     output = []
     for line in lines:
         output.append(line)
-        if random.random() < 0.15 and len(line.split()) > 6:
+        if random.random() < 0.3 and len(line.split()) > 6:
             key = line.strip().split()[0].lower()
             output.append(f"This shows that {key} is important.")
     return ' '.join(output)
 
-# Main humanize pipeline
-
+# Simplified humanize: skip AI smoothing for more visible flaws
 def humanize_text(text):
     t = downgrade_vocab(text)
     t = introduce_run_on(t)
@@ -154,20 +142,7 @@ def humanize_text(text):
     t = remove_casual_comments(t)
     t = paragraph_balancer(t)
     t = insert_redundancy(t)
-
-    full_prompt = f"{PROMPT}\n\n{t}\n\nparaphrase precisely as above."
-
-    response = openai.chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": PROMPT},
-            {"role": "user", "content": full_prompt}
-        ],
-        temperature=0.85,
-        max_tokens=1600
-    )
-
-    return response.choices[0].message.content.strip()
+    return t
 
 # === UI (v4.4 layout with v4.5 label) ===
 st.markdown("""
