@@ -13,12 +13,12 @@ if "previous_inputs" not in st.session_state:
 if "last_input_text" not in st.session_state:
     st.session_state.last_input_text = ""
 
-# === HUMANIZER v5.1 — Enhanced Imperfections Mode ===
+# === HUMANIZER v5.2 — Imperfect Student Mode with Short Sentences ===
 PROMPT = (
     "Rewrite the following academic content like a real student would, preserving all citations and formatting."
     " Introduce imperfections: run-on sentences, sentence fragments, inconsistent punctuation or capitalization,"
     " subject-verb disagreements, overuse of passive voice, uneven transitions, redundant phrasing,"
-    " limited parallelism, mixed formality, nominalizations."
+    " limited parallelism, mixed formality, nominalizations, and occasional stand-alone simple sentences."
     " Do not add any casual commentary beyond these flaws."
 )
 
@@ -101,6 +101,8 @@ def remove_casual_comments(text):
         text = re.sub(pat, '', text, flags=re.IGNORECASE)
     return text
 
+# Balance paragraphs but keep some short lines
+
 def paragraph_balancer(text):
     paragraphs = text.split('\n\n')
     balanced = []
@@ -119,6 +121,8 @@ def paragraph_balancer(text):
         balanced.append(' '.join(buffer))
     return '\n\n'.join(balanced)
 
+# Insert redundancy
+
 def insert_redundancy(text):
     lines = re.split(r'(?<=[.!?])\s+', text)
     output = []
@@ -129,7 +133,23 @@ def insert_redundancy(text):
             output.append(f"This shows that {key} is important.")
     return ' '.join(output)
 
-# Simplified humanize: skip AI smoothing for more visible flaws
+# New: Inject short simple sentences
+
+def inject_short_sentences(text):
+    short_sents = [
+        "It’s simple.", "This matters.", "It is unclear.", "Key point.", "Too broad.",
+        "Hard to say.", "That’s odd.", "Point above.", "Very basic.", "So what?"
+    ]
+    sentences = re.split(r'(?<=[.!?])\s+', text)
+    result = []
+    for s in sentences:
+        result.append(s)
+        if random.random() < 0.25:
+            result.append(random.choice(short_sents))
+    return ' '.join(result)
+
+# Main humanize pipeline
+
 def humanize_text(text):
     t = downgrade_vocab(text)
     t = introduce_run_on(t)
@@ -142,7 +162,11 @@ def humanize_text(text):
     t = remove_casual_comments(t)
     t = paragraph_balancer(t)
     t = insert_redundancy(t)
+    t = inject_short_sentences(t)
     return t
+
+# === UI Section (unchanged) ===
+# [...] UI code retained exactly as before
 
 # === UI (v4.4 layout with v4.5 label) ===
 st.markdown("""
