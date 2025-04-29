@@ -72,25 +72,54 @@ def insert_redundancy(text):
             output.append(f"This shows that {line.strip().split()[0].lower()} is important.")
     return " ".join(output)
 
-def inject_choppy_fragments(text):
-    additions = ["This matters.", "That’s significant.", "It’s worth noting.", "Don’t ignore this.", "Key point.",
-    "Still.", "Even then.", "That said.", "On the other hand.", "Then again.",
-    "Not always.", "Could be debated.", "That’s one view.", "It’s not that simple.", "There’s more to it.",
-    "That’s the issue.", "Potential flaw.", "Risk worth considering.", "Could break under pressure.", "Weak point.",
-    "Makes sense in context.", "That explains it.", "Fits the pattern.", "Shows something deeper.", "Hard to ignore."]
-    sentences = re.split(r'(?<=[.!?])\s+', text)
-    result = []
-    for s in sentences:
-        result.append(s)
-        if random.random() < 0.18:
-            result.append(random.choice(additions))
-    return " ".join(result)
+# ——— New: context-aware fragments ———
+TRANSITION = ["Still.", "That said.", "On the other hand."]
+EMPHASIS   = ["Key point.", "It’s worth noting."]
+CAVEAT     = ["Could be debated.", "Potential flaw."]
+
+def select_injection_points(sentences, max_per_para=2):
+    # score by presence of “important” keywords
+    scores = [
+        sum(1 for kw in ["important","key","show","demonstrate","issue","risk"] if kw in s.lower())
+        for s in sentences
+    ]
+    # pick top max_per_para indexes
+    idxs = sorted(range(len(sentences)), key=lambda i: scores[i], reverse=True)[:max_per_para]
+    return set(idxs)
+
+def choose_fragment(sent):
+    low = sent.lower()
+    if any(w in low for w in ["however","but","yet"]):
+        return random.choice(TRANSITION)
+    if any(w in low for w in ["show","demonstrate","important","key"]):
+        return random.choice(EMPHASIS)
+    if any(w in low for w in ["risk","problem","issue","flaw"]):
+        return random.choice(CAVEAT)
+    return random.choice(TRANSITION + EMPHASIS)
+
+# ——— Modified injector with per-paragraph cap & weighted probability ———
+def inject_choppy_fragments(text, max_per_para=2):
+    paras = text.split("\n\n")
+    out_paras = []
+    for p in paras:
+        sentences = re.split(r'(?<=[.!?])\s+', p)
+        inject_idxs = select_injection_points(sentences, max_per_para)
+        new = []
+        for i, s in enumerate(sentences):
+            new.append(s)
+            # weight by sentence length (10–50 words => higher chance)
+            prob = min(max(len(s.split())/20, 0.1), 0.5)
+            if i in inject_idxs and random.random() < prob:
+                new.append(choose_fragment(s))
+        out_paras.append(" ".join(new))
+    return "\n\n".join(out_paras)
 
 def humanize_text(text):
     simplified = downgrade_vocab(text)
     structured = paragraph_balancer(simplified)
     echoed = insert_redundancy(structured)
-    chopped = inject_choppy_fragments(echoed)
+    # call with tamed randomness
+    chopped = inject_choppy_fragments(echoed, max_per_para=2)
 
     full_prompt = f"{PROMPT}\n\n{chopped}\n\nRewrite this with the tone and structure described above."
 
@@ -121,6 +150,8 @@ textarea { background-color: #121212 !important; color: #ffffff !important; bord
 .vertical-divider { border-left: 1px solid #00ffff; height: 100%; margin: 0 1rem; }
 </style>
 """, unsafe_allow_html=True)
+
+# … the rest of your UI code remains unchanged …
 
 st.markdown('<div class="centered-container"><h1>🤖 InfiniAi-Humanizer</h1><p>Turn robotic AI text into real, natural, human-sounding writing.</p></div>', unsafe_allow_html=True)
 
