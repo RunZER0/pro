@@ -13,14 +13,13 @@ if "previous_inputs" not in st.session_state:
 if "last_input_text" not in st.session_state:
     st.session_state.last_input_text = ""
 
-# === HUMANIZER v4.2.1 — Precision Student Mode ===
+# === HUMANIZER v5.0 — Precision Student Mode with Essay-Inspired Flaws ===
 PROMPT = (
-    "Rewrite the following academic content like a real student would:"
-    " Maintain clarity and academic tone, but alternate between full, structured sentences and short, blunt ones."
-    " Use 1–2 choppy lines per paragraph to emphasize key ideas."
-    " Add mild imperfection: echo phrases and sentence fragments."
-    " Do not over-smooth. Let it feel like real writing."
-    " Do not add new facts. Preserve all in-text citations and formatting."
+    "Rewrite the following academic content like a real student would, preserving all citations and formatting."
+    " Introduce imperfections: run-on sentences, sentence fragments, inconsistent punctuation or capitalization,"
+    " subject-verb disagreements, overuse of passive voice, uneven transitions, redundant phrasing,"
+    " limited parallelism, mixed formality, nominalizations."
+    " Do not add any casual commentary beyond these flaws."
 )
 
 SYNONYMS = {
@@ -38,64 +37,125 @@ SYNONYMS = {
 
 def downgrade_vocab(text):
     for word, simple in SYNONYMS.items():
-        text = re.sub(rf'\b{word}\b', simple, text, flags=re.IGNORECASE)
+        text = re.sub(rf"\b{word}\b", simple, text, flags=re.IGNORECASE)
     return text
 
-def paragraph_balancer(text):
-    paragraphs = text.split('\n')
-    balanced = []
-    for p in paragraphs:
-        sentences = re.split(r'(?<=[.!?])\s+', p)
-        buffer = []
-        chop_count = 0
-        for s in sentences:
-            s_clean = s.strip()
-            if not s_clean:
-                continue
-            if len(s_clean.split()) > 20:
-                buffer.append(s_clean)
-            elif chop_count < 2:
-                buffer.append(s_clean)
-                chop_count += 1
-            else:
-                # Removed casual commentary injection
-                buffer.append(s_clean)
-        balanced.append(" ".join(buffer))
-    return "\n\n".join(balanced)
-
-def insert_redundancy(text):
+# Introduce run-on sentences by appending an extra clause without proper punctuation
+def introduce_run_on(text):
     lines = re.split(r'(?<=[.!?])\s+', text)
-    output = []
-    for i, line in enumerate(lines):
-        output.append(line)
-        if random.random() < 0.15 and len(line.split()) > 6:
-            output.append(f"This shows that {line.strip().split()[0].lower()} is important.")
-    return " ".join(output)
+    result = []
+    for line in lines:
+        if random.random() < 0.3 and len(line.split()) > 8:
+            result.append(line + ", and i also want to add something more without proper separation")
+        else:
+            result.append(line)
+    return " ".join(result)
 
-def inject_choppy_fragments(text):
-    additions = [
-        "That’s significant.", "It’s worth noting.", "Don’t ignore this.", "Key point.",
-        "Even then.", "That said.", "On the other hand.", "Then again.",
-        "Not always.", "Could be debated.", "That’s one view.", "It’s not that simple.",
-        "There’s more to it.", "That’s the issue.", "Potential flaw.", "Risk worth considering.",
-        "Could break under pressure.", "Weak point.", "Makes sense in context.",
-        "That explains it.", "Fits the pattern.", "Shows something deeper.", "Hard to ignore."
-    ]  # 'Still.' and 'This matters.' have been removed
+# Introduce fragments by truncating sentences
+def introduce_fragments(text):
+    sentences = re.split(r'(?<=[.!?])\s+', text)
+    result = []
+    for s in sentences:
+        if random.random() < 0.2 and len(s.split()) > 6:
+            fragment = ' '.join(s.split()[:5])
+            result.append(fragment)
+        else:
+            result.append(s)
+    return " ".join(result)
+
+# Garble punctuation and capitalization
+def garble_punctuation(text):
+    # Remove spaces after periods
+    if random.random() < 0.2:
+        text = re.sub(r'\. ', '.', text)
+    # Lowercase sentence starts
+    sentences = re.split(r'(?<=[.!?])\s+', text)
+    for i, s in enumerate(sentences):
+        if random.random() < 0.1 and s:
+            sentences[i] = s[0].lower() + s[1:]
+    return ' '.join(sentences)
+
+# Introduce subject-verb disagreements for 'they'
+def subject_verb_disagree(text):
+    return re.sub(r'\bthey (\w+)s\b', r'they \1', text)
+
+# Overuse passive voice by prefixing 'was'
+def passive_overuse(text):
+    sentences = re.split(r'(?<=[.!?])\s+', text)
+    for i, s in enumerate(sentences):
+        if random.random() < 0.25 and len(s.split()) > 5:
+            sentences[i] = 'was ' + s
+    return ' '.join(sentences)
+
+# Limit parallelism by breaking up parallel lists randomly
+def limit_parallelism(text):
+    return re.sub(r"\b(and|or) ([a-z]+), ([a-z]+)\b", r"\1 \2 and also \3", text)
+
+# Insert uneven transitions at random
+def uneven_transitions(text):
+    transitions = ['However,', 'Moreover,', 'For example,', 'But,', 'Yet,']
     sentences = re.split(r'(?<=[.!?])\s+', text)
     result = []
     for s in sentences:
         result.append(s)
-        if random.random() < 0.18:
-            result.append(random.choice(additions))
-    return " ".join(result)
+        if random.random() < 0.2:
+            result.append(random.choice(transitions))
+    return ' '.join(result)
+
+# Remove any remaining casual commentary phrases
+def remove_casual_comments(text):
+    patterns = [r'I think', r'you know', r'really matters']
+    for pat in patterns:
+        text = re.sub(pat, '', text, flags=re.IGNORECASE)
+    return text
+
+# Apply paragraph balancing with choppy lines preserved
+
+def paragraph_balancer(text):
+    paragraphs = text.split('\n\n')
+    balanced = []
+    for p in paragraphs:
+        sentences = re.split(r'(?<=[.!?])\s+', p)
+        buffer = []
+        chops = 0
+        for s in sentences:
+            if len(s.split()) > 20:
+                buffer.append(s)
+            elif chops < 2:
+                buffer.append(s)
+                chops += 1
+            else:
+                buffer.append(s)
+        balanced.append(' '.join(buffer))
+    return '\n\n'.join(balanced)
+
+# Insert redundant phrases mimicking student repetition
+def insert_redundancy(text):
+    lines = re.split(r'(?<=[.!?])\s+', text)
+    output = []
+    for line in lines:
+        output.append(line)
+        if random.random() < 0.15 and len(line.split()) > 6:
+            key = line.strip().split()[0].lower()
+            output.append(f"This shows that {key} is important.")
+    return ' '.join(output)
+
+# Main humanize pipeline
 
 def humanize_text(text):
-    simplified = downgrade_vocab(text)
-    structured = paragraph_balancer(simplified)
-    echoed = insert_redundancy(structured)
-    chopped = inject_choppy_fragments(echoed)
+    t = downgrade_vocab(text)
+    t = introduce_run_on(t)
+    t = introduce_fragments(t)
+    t = garble_punctuation(t)
+    t = subject_verb_disagree(t)
+    t = passive_overuse(t)
+    t = limit_parallelism(t)
+    t = uneven_transitions(t)
+    t = remove_casual_comments(t)
+    t = paragraph_balancer(t)
+    t = insert_redundancy(t)
 
-    full_prompt = f"{PROMPT}\n\n{chopped}\n\nRewrite this with the tone and structure described above."
+    full_prompt = f"{PROMPT}\n\n{t}\n\nRewrite precisely as above."
 
     response = openai.chat.completions.create(
         model="gpt-4o",
@@ -107,8 +167,7 @@ def humanize_text(text):
         max_tokens=1600
     )
 
-    result = response.choices[0].message.content.strip()
-    return result
+    return response.choices[0].message.content.strip()
 
 # === UI (v4.4 layout with v4.5 label) ===
 st.markdown("""
