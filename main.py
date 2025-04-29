@@ -13,9 +13,9 @@ if "previous_inputs" not in st.session_state:
 if "last_input_text" not in st.session_state:
     st.session_state.last_input_text = ""
 
-# === FORMALITY RULES ===
+# === STUDENT-ESSAY STYLE GUIDELINES ===
 
-# 1. Banned phrases/words (no casual fillers, contractions, slang)
+# 1. Banned casual fillers, contractions, slang
 BANNED_PHRASES = {
     "still", "this matters", "commentary",
     "don't", "can't", "won't", "it's", "you're", "they're",
@@ -25,17 +25,17 @@ BANNED_PHRASES = {
 
 # 2. Informal → formal substitutions
 FORMAL_MAP = {
-    "don't": "do not",     "can't": "cannot",   "won't": "will not",
-    "it's": "it is",       "you're": "you are",
-    "gonna": "going to",   "wanna": "want to",
-    "kinda": "rather",     "stuff": "items",
-    "a lot": "many",       "lots of": "many",
-    "really": "truly",     "very": "extremely", "just": "merely",
+    "don't": "do not",   "can't": "cannot",  "won't": "will not",
+    "it's": "it is",     "you're": "you are",
+    "gonna": "going to", "wanna": "want to",
+    "kinda": "rather",   "stuff": "items",
+    "a lot": "many",     "lots of": "many",
+    "really": "truly",   "very": "extremely", "just": "merely",
     "basically": "fundamentally", "sort of": "somewhat"
 }
 
 def enforce_formality(sent: str) -> str:
-    """Substitute informal tokens with formal equivalents."""
+    """Replace informal tokens with their formal equivalents."""
     for informal, formal in FORMAL_MAP.items():
         pattern = rf"\b{re.escape(informal)}\b"
         sent = re.sub(pattern, formal, sent, flags=re.IGNORECASE)
@@ -46,87 +46,51 @@ def contains_banned(sent: str) -> bool:
     low = sent.lower()
     return any(phrase in low for phrase in BANNED_PHRASES)
 
-# === ROLE-BASED CHUNKING & LENGTH TARGETS ===
+# 3. Common academic transitions for student essays
+TRANSITIONS = [
+    "Furthermore,", "However,", "For example,", "In contrast,",
+    "Moreover,", "Consequently,", "Therefore,"
+]
 
-ROLE_LENGTHS = {
-    "claim":         (6, 12),
-    "transition":    (6, 12),
-    "evidence":      (20, 30),
-    "interpretation":(20, 30),
-    "conclusion":    (6, 12),
-}
-
-def select_role(sent: str, idx: int, total: int) -> str:
-    low = sent.lower()
-    if idx == 0:
-        return "claim"
-    if idx == total - 1:
-        return "conclusion"
-    if any(w in low for w in ["however", "but", "yet", "on the other hand"]):
-        return "transition"
-    if any(w in low for w in ["suggests", "demonstrates", "indicates", "shows"]):
-        return "interpretation"
-    return "evidence"
-
-def annotate_chunks(text: str):
-    """Split text into (sentence, role) pairs."""
-    paras = [p for p in text.split("\n\n") if p.strip()]
-    annotated = []
-    for p in paras:
-        sents = re.split(r'(?<=[.!?])\s+', p)
-        total = len(sents)
-        for i, s in enumerate(sents):
-            cleaned = s.strip()
-            if cleaned:
-                role = select_role(cleaned, i, total)
-                annotated.append((cleaned, role))
-    return annotated
-
-# === HUMANIZE FUNCTION ===
-
-SYSTEM_STYLE = """
-You are rewriting in a neutral-formal academic register.
-Style guidelines:
- • No contractions or slang.
- • No filler words (e.g. very, just, really).
- • Do NOT use: still; this matters; commentary.
- • Observe the role's target word count exactly.
+def process_paragraph(par: str) -> str:
+    """
+    Rewrite one paragraph into a 3–5 sentence student essay paragraph:
+      1) Topic sentence (~8–12 words)
+      2) 2–3 elaboration sentences (~18–25 words each), using at least one TRANSITION
+      3) Concluding sentence (~6–10 words)
+    Allow mild imperfections (e.g. leading ‘However,’). Enforce neutral-formal tone.
+    """
+    style_block = f"""
+Rewrite the following paragraph to read like an authentic student essay paragraph:
+• Begin with a clear topic sentence (~8–12 words).
+• Include 2–3 elaboration sentences (~18–25 words each), using at least one of: {', '.join(TRANSITIONS)}.
+• End with a concise concluding sentence (~6–10 words).
+• Vary sentence lengths; mild imperfections (e.g. a leading ‘However,’ fragment) are okay.
+• Tone: neutral-formal academic.
+• Do NOT use banned fillers or contractions.
 """
+    prompt = style_block + "\nOriginal paragraph:\n" + par
+    resp = openai.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": style_block},
+            {"role": "user",   "content": prompt}
+        ],
+        temperature=0.75,
+        max_tokens=200
+    )
+    out = resp.choices[0].message.content.strip()
+    out = enforce_formality(out)
+    # remove any lines containing banned phrases
+    return "\n\n".join(
+        line for line in out.split("\n") if line and not contains_banned(line)
+    )
 
 def humanize_text(text: str) -> str:
-    # 1. Pre-clean: apply formal map and drop empty paras
-    cleaned = "\n\n".join(
-        enforce_formality(p).strip()
-        for p in text.split("\n\n") if p.strip()
-    )
-    # 2. Chunk & tag roles
-    annotated = annotate_chunks(cleaned)
-    # 3. Generate each sentence
-    outputs = []
-    for chunk, role in annotated:
-        lo, hi = ROLE_LENGTHS[role]
-        prompt = (
-            f"{SYSTEM_STYLE}\n"
-            f"Role: {role}\n"
-            f"Target length: {lo}–{hi} words\n\n"
-            f"Rewrite:\n{chunk}"
-        )
-        resp = openai.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system",  "content": SYSTEM_STYLE},
-                {"role": "user",    "content": prompt}
-            ],
-            temperature=0.7,
-            max_tokens= hi * 3
-        )
-        sent = resp.choices[0].message.content.strip()
-        # 4. Post-process: enforce formality & drop banned
-        sent = enforce_formality(sent)
-        if not contains_banned(sent):
-            outputs.append(sent)
-    # 5. Reassemble
-    return " ".join(outputs)
+    """Apply student-essay style rewriting paragraph by paragraph."""
+    paras = [p.strip() for p in text.split("\n\n") if p.strip()]
+    rewritten = [process_paragraph(p) for p in paras]
+    return "\n\n".join(rewritten)
 
 # === UI (v4.4 layout with v4.5 label) ===
 
@@ -144,7 +108,6 @@ textarea { background-color: #121212 !important; color: #ffffff !important; bord
 </style>
 """, unsafe_allow_html=True)
 
-# … the rest of your UI code remains unchanged …
 st.markdown('<div class="centered-container"><h1>🤖 InfiniAi-Humanizer</h1><p>Turn robotic AI text into real, natural, human-sounding writing.</p></div>', unsafe_allow_html=True)
 
 input_text = st.text_area("Paste your AI-generated academic text below (Max: 10,000 characters):", height=280, max_chars=10000)
