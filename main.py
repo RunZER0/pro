@@ -1,9 +1,9 @@
 import streamlit as st
-import openai
+from openai import OpenAI
 import textstat
 
-# Preserve OpenAI key for backward compatibility
-openai.api_key = st.secrets["OPENAI_API_KEY"]
+# Initialize OpenAI client
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 # Initialize session state
 if "human_output" not in st.session_state:
@@ -47,7 +47,7 @@ You are an expert academic humanizer. Given AI-generated scholarly text, transfo
 
 Return ONLY the transformed text—no explanations or metadata.
 """
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": system_prompt},
@@ -73,17 +73,9 @@ textarea { background-color: #121212 !important; color: #ffffff !important; bord
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown(
-    '<div class="centered-container"><h1>🤖 InfiniAi-Humanizer</h1>'
-    '<p>Turn robotic AI text into real, natural, human-sounding writing.</p></div>',
-    unsafe_allow_html=True
-)
+st.markdown('<div class="centered-container"><h1>🤖 InfiniAi-Humanizer</h1><p>Turn robotic AI text into real, natural, human-sounding writing.</p></div>', unsafe_allow_html=True)
 
-input_text = st.text_area(
-    "Paste your AI-generated academic text below (Max: 10,000 characters):",
-    height=280,
-    max_chars=10000
-)
+input_text = st.text_area("Paste your AI-generated academic text below (Max: 10,000 characters):", height=280, max_chars=10000)
 
 if len(input_text) > 10000:
     st.warning("⚠️ Your input is over 10,000 characters. Only the first 10,000 characters will be used.")
@@ -101,25 +93,14 @@ if st.button("🔁 Humanize / Re-Humanize Text"):
 
 if st.session_state.human_output:
     st.markdown("### ✍️ Humanized Output")
-    edited_output = st.text_area(
-        "Edit your result below:",
-        value=st.session_state.human_output,
-        height=300
-    )
+    edited_output = st.text_area("Edit your result below:", value=st.session_state.human_output, height=300)
     st.session_state.human_output = edited_output
 
     words = len(edited_output.split())
     score = round(textstat.flesch_reading_ease(edited_output), 1)
-    st.markdown(
-        f"**📊 Output Word Count:** {words} &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp; **🧠 Readability Score:** {score}%"
-    )
+    st.markdown(f"**📊 Output Word Count:** {words} &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp; **🧠 Readability Score:** {score}%")
 
-    st.download_button(
-        "💾 Download Output",
-        data=edited_output,
-        file_name="humanized_output.txt",
-        mime="text/plain"
-    )
+    st.download_button("💾 Download Output", data=edited_output, file_name="humanized_output.txt", mime="text/plain")
 
 st.markdown("**Version 4.5**")
 st.markdown("---")
