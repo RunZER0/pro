@@ -48,7 +48,7 @@ You are an expert academic humanizer. Given AI-generated scholarly text, you wil
 Return ONLY the transformed text—no explanations or metadata.
 """
     response = openai.ChatCompletion.create(
-        model="gpt-4o-mini",
+        model="gpt-4o",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": text}
