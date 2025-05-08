@@ -1,6 +1,6 @@
-# Updating main.py with OpenAI integration
+# Rewriting main.py with proper quoting and OpenAI integration
 
-new_code = '''import streamlit as st
+corrected_code = '''import streamlit as st
 import openai
 import textstat
 
@@ -35,7 +35,7 @@ You are an expert academic humanizer. Given AI-generated scholarly text, you wil
 5. Rhetorical & Cohesive Devices:
    - Include rhetorical questions post-explanation.
    - Rotate transitional connectors (e.g., 'however', 'moreover', 'even so').
-   - Add mini summaries (“In short, the key insight is…”) every ~15 sentences.
+   - Add mini summaries ("In short, the key insight is…") every ~15 sentences.
 6. Citation & Reference Layer:
    - Mix citation styles: parenthetical, footnotes, bracketed numbers.
    - Alternate inline and block quotations formatting.
@@ -48,7 +48,7 @@ You are an expert academic humanizer. Given AI-generated scholarly text, you wil
 Return ONLY the transformed text—no explanations or metadata.
 """
     response = openai.ChatCompletion.create(
-        model="gpt-4o",
+        model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": text}
@@ -58,7 +58,7 @@ Return ONLY the transformed text—no explanations or metadata.
     )
     return response.choices[0].message.content
 
-# === UI (v4.4 layout with v4.5 label) ===
+# === UI (v4.4 layout with v4.6 label) ===
 st.markdown("""
 <style>
 .stApp { background-color: #0d0d0d; color: #00ffff; font-family: 'Segoe UI', monospace; text-align: center; }
@@ -73,18 +73,19 @@ textarea { background-color: #121212 !important; color: #ffffff !important; bord
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="centered-container"><h1>🤖 InfiniAi-Humanizer</h1><p>Turn robotic AI text into real, natural, human-sounding writing.</p></div>', unsafe_allow_html=True)
+st.markdown('<div class="centered-container"><h1>🤖 InfiniAi-Humanizer</h1><p>AI-powered: humanize any academic text with authentic style.</p></div>', unsafe_allow_html=True)
 
 input_text = st.text_area("Paste your AI-generated academic text below (Max: 10,000 characters):", height=280, max_chars=10000)
 
 if len(input_text) > 10000:
     st.warning("⚠️ Your input is over 10,000 characters. Only the first 10,000 characters will be used.")
+
 st.markdown(f"**{len(input_text.split())} Words, {len(input_text)} Characters**")
 
 if st.button("🔁 Humanize / Re-Humanize Text"):
     if input_text.strip():
         trimmed_input = input_text[:10000]
-        with st.spinner("Humanizing academic text..."):
+        with st.spinner("Humanizing academic text with OpenAI..."):
             output = humanize_text(trimmed_input)
             st.session_state.human_output = output
             st.session_state.last_input_text = trimmed_input
@@ -102,32 +103,33 @@ if st.session_state.human_output:
 
     st.download_button("💾 Download Output", data=edited_output, file_name="humanized_output.txt", mime="text/plain")
 
-st.markdown("**Version 4.5**")
+st.markdown("**Version 4.6**")
 st.markdown("---")
 st.markdown("""
 <div class='features-grid'>
     <div class='feature'>
         <strong>✍️ Natural Cadence:</strong><br>
-        Your words flow like a real student — no rigid AI rhythm.
+        Powered by OpenAI, your prose flows like a real student.
     </div>
     <div class='vertical-divider'></div>
     <div class='feature'>
-        <strong>🔁 Structured Variance:</strong><br>
-        Paragraphs are well balanced for human clarity.
+        <strong>🔁 Directional Guidance:</strong><br>
+        Detailed instructions ensure balanced, human-like style.
     </div>
     <div class='vertical-divider'></div>
     <div class='feature'>
         <strong>📚 Academic Realism:</strong><br>
-        The tone mimics thoughtful effort, not perfect computation.
+        Maintains the right balance of formality and authenticity.
     </div>
 </div>
 
 <div class='features-grid'>
     <div class='comment'>
-        <em>"This actually sounds like I wrote it after a long study night."</em><br><strong>- Joseph</strong>
+        <em>"Finally, an AI tool that writes like me, not like a textbook."</em><br><strong>- Alex</strong>
     </div>
     <div class='comment'>
-        <em>"Passed the AI check with flying colors. And my professor said it felt authentic."</em><br><strong>- Kate</strong>
+        <em>"It passed every checker—and still felt genuine."</em><br><strong>- Maya</strong>
     </div>
 </div>
 """, unsafe_allow_html=True)
+'''
