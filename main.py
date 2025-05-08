@@ -1,11 +1,11 @@
 import streamlit as st
-from openai import OpenAI
+import openai
+import random
 import textstat
+import re
 
-# Initialize OpenAI client
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+openai.api_key = st.secrets["OPENAI_API_KEY"]
 
-# Initialize session state
 if "human_output" not in st.session_state:
     st.session_state.human_output = ""
 if "previous_inputs" not in st.session_state:
@@ -13,49 +13,79 @@ if "previous_inputs" not in st.session_state:
 if "last_input_text" not in st.session_state:
     st.session_state.last_input_text = ""
 
-# === AI-Powered Humanizer v6.0 ===
-def humanize_text(text: str) -> str:
-    system_prompt = """
-You are an expert academic humanizer. Given AI-generated scholarly text as input, transform it into natural, human-like prose that evades AI detectors. Apply the following manipulations unpredictably and with human-like inconsistency:
+# === HUMANIZER v4.2.1 — Precision Student Mode ===
+# Vocab simplification map
+SYNONYMS = {
+    "utilize": "use",
+    "therefore": "so",
+    "subsequently": "then",
+    "prioritize": "focus on",
+    "implementation": "doing",
+    "prohibit": "stop",
+    "facilitate": "help",
+    "demonstrate": "show",
+    "significant": "important",
+    "furthermore": "also",
+    "approximately": "about",
+    "individuals": "people",
+    "components": "parts",
+    "eliminate": "remove",
+    "require": "need",
+    "crucial": "important",
+    "complex": "hard",
+    "vehicle": "car",
+    "performance": "how it works",
+    "enhanced": "better",
+    "flexible": "bendy",
+    "robust": "strong",
+}
 
-1. Sentence-Length Variation:
-   - Alternate between long, clause-rich sentences (20+ words) and short, punchy statements (≤8 words).
-   - Never use more than two sentences of similar length consecutively.
+def downgrade_vocab(text):
+    for word, simple in SYNONYMS.items():
+        text = re.sub(rf'\b{word}\b', simple, text, flags=re.IGNORECASE)
+    return text
 
-2. Punctuation & Spacing:
-   - Vary commas, semicolons, em-dashes, and ellipses.
-   - Introduce occasional extra or missing spaces around punctuation, random line breaks after short sentences, and errant double spaces.
+def force_short_sentences(text):
+    # Add breaklines after punctuation to help GPT segment
+    text = re.sub(r'([.!?])\s+', r'\1\n', text)
+    return text
 
-3. Lexical & Register Shifts:
-   - Replace common words with synonyms in about 25% of instances.
-   - Switch between third-person and first-person voice sporadically.
-   - Inject colloquial phrases (“you see”, “to be honest”, “at the end of the day”) intermittently.
+def humanize_text(text):
+    # Step 1: Preprocess
+    simplified = downgrade_vocab(text)
+    shortened = force_short_sentences(simplified)
 
-4. Stylistic Flourishes:
-   - Insert genuine rhetorical questions after complex ideas.
-   - Use parenthetical asides and bracketed footnote markers randomly.
-
-5. Human Imperfections:
-   - Seed ~1 minor typo per 200 words (e.g. “teh” for “the”).
-   - Include occasional split infinitives or dangling modifiers.
-   - Introduce minor capitalization inconsistencies.
-
-6. Thematic Cohesion:
-   - Ensure all insertions remain on-topic, reinforcing rather than distracting.
-   - Emphasize key points as a real writer would.
-
-Return ONLY the transformed text—no explanations or metadata.
-"""
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user",   "content": text}
-        ],
-        temperature=0.75,
-        max_tokens=2048
+    # Step 2: Constrained prompt to enforce target behavior
+    prompt = (
+        "Rewrite the following text using basic English. Do not add, explain, or rephrase with style. "
+        "Split long sentences into short ones. Make the grammar simple. Do not use advanced words. "
+        "Do not try to sound natural or fluent. Just make it simple, short, and literal. Assume a non-native speaker with beginner-level English.\n\n"
+        f"{shortened}"
     )
-    return response.choices[0].message.content.strip()
+
+    response = openai.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {
+                "role": "system",
+                "content": "You rewrite text in flat, short, basic English. No extra details. No style. Just short, literal sentences."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        temperature=0.2,
+        max_tokens=1600
+    )
+
+    raw_output = response.choices[0].message.content.strip()
+
+    # Step 3: Postprocess – clean up extra spacing
+    cleaned = re.sub(r'\n{2,}', '\n\n', raw_output)
+    cleaned = re.sub(r'\s+', ' ', cleaned)
+    cleaned = re.sub(r'\.([A-Z])', r'. \1', cleaned)
+    return cleaned.strip()
 
 # === UI (v4.4 layout with v4.5 label) ===
 st.markdown("""
@@ -72,17 +102,9 @@ textarea { background-color: #121212 !important; color: #ffffff !important; bord
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown(
-    '<div class="centered-container"><h1>🤖 InfiniAi-Humanizer</h1>'
-    '<p>Turn robotic AI text into real, natural, human-sounding writing.</p></div>',
-    unsafe_allow_html=True
-)
+st.markdown('<div class="centered-container"><h1>🤖 InfiniAi-Humanizer</h1><p>Turn robotic AI text into real, natural, human-sounding writing.</p></div>', unsafe_allow_html=True)
 
-input_text = st.text_area(
-    "Paste your AI-generated academic text below (Max: 10,000 characters):",
-    height=280,
-    max_chars=10000
-)
+input_text = st.text_area("Paste your AI-generated academic text below (Max: 10,000 characters):", height=280, max_chars=10000)
 
 if len(input_text) > 10000:
     st.warning("⚠️ Your input is over 10,000 characters. Only the first 10,000 characters will be used.")
@@ -100,25 +122,14 @@ if st.button("🔁 Humanize / Re-Humanize Text"):
 
 if st.session_state.human_output:
     st.markdown("### ✍️ Humanized Output")
-    edited_output = st.text_area(
-        "Edit your result below:",
-        value=st.session_state.human_output,
-        height=300
-    )
+    edited_output = st.text_area("Edit your result below:", value=st.session_state.human_output, height=300)
     st.session_state.human_output = edited_output
 
     words = len(edited_output.split())
     score = round(textstat.flesch_reading_ease(edited_output), 1)
-    st.markdown(
-        f"**📊 Output Word Count:** {words} &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp; **🧠 Readability Score:** {score}%"
-    )
+    st.markdown(f"**📊 Output Word Count:** {words} &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp; **🧠 Readability Score:** {score}%")
 
-    st.download_button(
-        "💾 Download Output",
-        data=edited_output,
-        file_name="humanized_output.txt",
-        mime="text/plain"
-    )
+    st.download_button("💾 Download Output", data=edited_output, file_name="humanized_output.txt", mime="text/plain")
 
 st.markdown("**Version 4.5**")
 st.markdown("---")
