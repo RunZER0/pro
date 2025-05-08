@@ -1,113 +1,64 @@
-import streamlit as st
-import openai
-import random
-import textstat
-import re
+# Updating main.py with OpenAI integration
 
+new_code = '''import streamlit as st
+import openai
+import textstat
+
+# Preserve OpenAI key for backward compatibility
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
+# Initialize session state
 if "human_output" not in st.session_state:
     st.session_state.human_output = ""
-if "previous_inputs" not in st.session_state:
-    st.session_state.previous_inputs = {}
 if "last_input_text" not in st.session_state:
     st.session_state.last_input_text = ""
 
-# === HUMANIZER v4.2.1 — Precision Student Mode ===
-PROMPT = (
-    "Rewrite the following academic content like a real student would:"
-    " Maintain clarity and academic tone, but alternate between full, structured sentences and short ones, but the short ones should carry some significance."
-    " Use 1–2 choppy lines per paragraph to emphasize key ideas."
-    " Add mild imperfection: echo phrases, sentence fragments, and plain transitions like 'Still' or 'This matters but not overly used and not stand alone - they should be neatly used.'"
-    " Do not over-smooth. Let it feel like real writing."
-    " Do not add new facts. Preserve all in-text citations and formatting."
-)
+# === AI-Powered Humanizer Engine v6.0 ===
+def humanize_text(text: str) -> str:
+    system_prompt = """
+You are an expert academic humanizer. Given AI-generated scholarly text, you will transform it into natural, human-like prose while embedding the following stylistic manipulations:
 
-SYNONYMS = {
-    "utilize": "use",
-    "therefore": "so",
-    "subsequently": "then",
-    "prioritize": "focus on",
-    "implementation": "doing",
-    "prohibit": "stop",
-    "facilitate": "help",
-    "demonstrate": "show",
-    "significant": "big",
-    "furthermore": "also"
-}
+1. Sentence-Length Sculpting:
+   - Alternate between long, clause-rich sentences and brief, punchy statements.
+   - Break very long sentences (>25 words) into smaller ones; merge very short ones (<8 words) thoughtfully.
+2. Punctuation Remix:
+   - Vary commas, semicolons, and em-dashes.
+   - Occasionally introduce ellipses for reflective pauses.
+3. Formatting Noise:
+   - Insert occasional line breaks after short sentences.
+   - Randomize bullet or numbered lists formatting.
+   - Add sporadic extra whitespace.
+4. Lexical & Register Shifts:
+   - Cycle synonyms for common terms (~30% of occurrences).
+   - Switch voice between third-person and first-person pronouns.
+   - Inject colloquial phrases sparingly.
+5. Rhetorical & Cohesive Devices:
+   - Include rhetorical questions post-explanation.
+   - Rotate transitional connectors (e.g., 'however', 'moreover', 'even so').
+   - Add mini summaries (“In short, the key insight is…”) every ~15 sentences.
+6. Citation & Reference Layer:
+   - Mix citation styles: parenthetical, footnotes, bracketed numbers.
+   - Alternate inline and block quotations formatting.
+7. Imperfection Seeding:
+   - Insert minor typos and run-on corrections.
+   - Add a split infinitive or dangling modifier per ~300 words.
+8. Final Coherence:
+   - Ensure varied sentence-length distribution and natural flow.
 
-def downgrade_vocab(text):
-    for word, simple in SYNONYMS.items():
-        text = re.sub(rf'\b{word}\b', simple, text, flags=re.IGNORECASE)
-    return text
-
-def paragraph_balancer(text):
-    paragraphs = text.split('\n')
-    balanced = []
-    for p in paragraphs:
-        sentences = re.split(r'(?<=[.!?])\s+', p)
-        buffer = []
-        chop_count = 0
-        for s in sentences:
-            s_clean = s.strip()
-            if not s_clean:
-                continue
-            if len(s_clean.split()) > 20:
-                buffer.append(s_clean)
-            elif chop_count < 2:
-                buffer.append(s_clean)
-                chop_count += 1
-            else:
-                combined = s_clean + (" " + random.choice(["Still.", "This matters.", "Even then."]) if random.random() < 0.3 else "")
-                buffer.append(combined)
-        balanced.append(" ".join(buffer))
-    return "\n\n".join(balanced)
-
-def insert_redundancy(text):
-    lines = re.split(r'(?<=[.!?])\s+', text)
-    output = []
-    for i, line in enumerate(lines):
-        output.append(line)
-        if random.random() < 0.15 and len(line.split()) > 6:
-            output.append(f"This shows that {line.strip().split()[0].lower()} is important.")
-    return " ".join(output)
-
-def inject_choppy_fragments(text):
-    additions = ["This matters.", "That’s significant.", "It’s worth noting.", "Don’t ignore this.", "Key point.",
-    "Still.", "Even then.", "That said.", "On the other hand.", "Then again.",
-    "Not always.", "Could be debated.", "That’s one view.", "It’s not that simple.", "There’s more to it.",
-    "That’s the issue.", "Potential flaw.", "Risk worth considering.", "Could break under pressure.", "Weak point.",
-    "Makes sense in context.", "That explains it.", "Fits the pattern.", "Shows something deeper.", "Hard to ignore."]
-    sentences = re.split(r'(?<=[.!?])\s+', text)
-    result = []
-    for s in sentences:
-        result.append(s)
-        if random.random() < 0.18:
-            result.append(random.choice(additions))
-    return " ".join(result)
-
-def humanize_text(text):
-    simplified = downgrade_vocab(text)
-    structured = paragraph_balancer(simplified)
-    echoed = insert_redundancy(structured)
-    chopped = inject_choppy_fragments(echoed)
-
-    full_prompt = f"{PROMPT}\n\n{chopped}\n\nRewrite this with the tone and structure described above."
-
-    response = openai.chat.completions.create(
-        model="gpt-4o",
+Return ONLY the transformed text—no explanations or metadata.
+"""
+    response = openai.ChatCompletion.create(
+        model="gpt-4o-mini",
         messages=[
-            {"role": "system", "content": PROMPT},
-            {"role": "user", "content": full_prompt}
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": text}
         ],
-        temperature=0.85,
-        max_tokens=1600
+        temperature=0.7,
+        max_tokens=2048
     )
+    return response.choices[0].message.content
 
-    result = response.choices[0].message.content.strip()
-    return result
-
-# === UI (v4.4 layout with v4.5 label) ===
+# === UI (v4.4 layout with v4.6 label) ===
 st.markdown("""
 <style>
 .stApp { background-color: #0d0d0d; color: #00ffff; font-family: 'Segoe UI', monospace; text-align: center; }
@@ -122,18 +73,19 @@ textarea { background-color: #121212 !important; color: #ffffff !important; bord
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="centered-container"><h1>🤖 InfiniAi-Humanizer</h1><p>Turn robotic AI text into real, natural, human-sounding writing.</p></div>', unsafe_allow_html=True)
+st.markdown('<div class="centered-container"><h1>🤖 InfiniAi-Humanizer</h1><p>AI-powered: humanize any academic text with authentic style.</p></div>', unsafe_allow_html=True)
 
 input_text = st.text_area("Paste your AI-generated academic text below (Max: 10,000 characters):", height=280, max_chars=10000)
 
 if len(input_text) > 10000:
     st.warning("⚠️ Your input is over 10,000 characters. Only the first 10,000 characters will be used.")
+
 st.markdown(f"**{len(input_text.split())} Words, {len(input_text)} Characters**")
 
 if st.button("🔁 Humanize / Re-Humanize Text"):
     if input_text.strip():
         trimmed_input = input_text[:10000]
-        with st.spinner("Humanizing academic text..."):
+        with st.spinner("Humanizing academic text with OpenAI..."):
             output = humanize_text(trimmed_input)
             st.session_state.human_output = output
             st.session_state.last_input_text = trimmed_input
@@ -151,32 +103,40 @@ if st.session_state.human_output:
 
     st.download_button("💾 Download Output", data=edited_output, file_name="humanized_output.txt", mime="text/plain")
 
-st.markdown("**Version 4.5**")
+st.markdown("**Version 4.6**")
 st.markdown("---")
 st.markdown("""
 <div class='features-grid'>
     <div class='feature'>
         <strong>✍️ Natural Cadence:</strong><br>
-        Your words flow like a real student — no rigid AI rhythm.
+        Powered by OpenAI, your prose flows like a real student.
     </div>
     <div class='vertical-divider'></div>
     <div class='feature'>
-        <strong>🔁 Structured Variance:</strong><br>
-        Paragraphs are well balanced for human clarity.
+        <strong>🔁 Directional Guidance:</strong><br>
+        Detailed instructions ensure balanced, human-like style.
     </div>
     <div class='vertical-divider'></div>
     <div class='feature'>
         <strong>📚 Academic Realism:</strong><br>
-        The tone mimics thoughtful effort, not perfect computation.
+        Maintains the right balance of formality and authenticity.
     </div>
 </div>
 
 <div class='features-grid'>
     <div class='comment'>
-        <em>"This actually sounds like I wrote it after a long study night."</em><br><strong>- Joseph</strong>
+        <em>"Finally, an AI tool that writes like me, not like a textbook."</em><br><strong>- Alex</strong>
     </div>
     <div class='comment'>
-        <em>"Passed the AI check with flying colors. And my professor said it felt authentic."</em><br><strong>- Kate</strong>
+        <em>"It passed every checker—and still felt genuine."</em><br><strong>- Maya</strong>
     </div>
 </div>
 """, unsafe_allow_html=True)
+'''
+
+# Write out the new main.py
+with open('/mnt/data/main.py', 'w') as f:
+    f.write(new_code)
+
+print("Rewritten main.py with OpenAI integration has been created at /mnt/data/main.py")
+print(new_code)
