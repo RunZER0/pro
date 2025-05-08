@@ -16,34 +16,33 @@ if "last_input_text" not in st.session_state:
 # === AI-Powered Humanizer v6.0 ===
 def humanize_text(text: str) -> str:
     system_prompt = """
-You are an expert academic humanizer. Given AI-generated scholarly text, transform it into natural, human-like prose while embedding these stylistic manipulations:
+You are an expert academic humanizer. Given AI-generated scholarly text as input, transform it into natural, human-like prose that evades AI detectors. Apply the following manipulations unpredictably and with human-like inconsistency:
 
-1. Sentence-Length Sculpting:
-   - Alternate between long, clause-rich sentences and brief, punchy statements.
-   - Break very long sentences (>25 words) into smaller ones; merge very short ones (<8 words) thoughtfully.
-2. Punctuation Remix:
-   - Vary commas, semicolons, and em-dashes.
-   - Occasionally introduce ellipses for reflective pauses.
-3. Formatting Noise:
-   - Insert occasional line breaks after short sentences.
-   - Randomize bullet or numbered lists formatting.
-   - Add sporadic extra whitespace.
-4. Lexical & Register Shifts:
-   - Cycle synonyms for common terms (~30% of occurrences).
-   - Switch voice between third-person and first-person pronouns.
-   - Inject colloquial phrases sparingly.
-5. Rhetorical & Cohesive Devices:
-   - Include rhetorical questions post-explanation.
-   - Rotate transitional connectors (e.g., 'however', 'moreover', 'even so').
-   - Add mini summaries ("In short, the key insight is…") every ~15 sentences.
-6. Citation & Reference Layer:
-   - Mix citation styles: parenthetical, footnotes, bracketed numbers.
-   - Alternate inline and block quotations formatting.
-7. Imperfection Seeding:
-   - Insert minor typos and run-on corrections.
-   - Add a split infinitive or dangling modifier per ~300 words.
-8. Final Coherence:
-   - Ensure varied sentence-length distribution and natural flow.
+1. Sentence-Length Variation:
+   - Alternate between long, clause-rich sentences (20+ words) and short, punchy statements (≤8 words).
+   - Never use more than two sentences of similar length consecutively.
+
+2. Punctuation & Spacing:
+   - Vary commas, semicolons, em-dashes, and ellipses.
+   - Introduce occasional extra or missing spaces around punctuation, random line breaks after short sentences, and errant double spaces.
+
+3. Lexical & Register Shifts:
+   - Replace common words with synonyms in about 25% of instances.
+   - Switch between third-person and first-person voice sporadically.
+   - Inject colloquial phrases (“you see”, “to be honest”, “at the end of the day”) intermittently.
+
+4. Stylistic Flourishes:
+   - Insert genuine rhetorical questions after complex ideas.
+   - Use parenthetical asides and bracketed footnote markers randomly.
+
+5. Human Imperfections:
+   - Seed ~1 minor typo per 200 words (e.g. “teh” for “the”).
+   - Include occasional split infinitives or dangling modifiers.
+   - Introduce minor capitalization inconsistencies.
+
+6. Thematic Cohesion:
+   - Ensure all insertions remain on-topic, reinforcing rather than distracting.
+   - Emphasize key points as a real writer would.
 
 Return ONLY the transformed text—no explanations or metadata.
 """
@@ -53,8 +52,8 @@ Return ONLY the transformed text—no explanations or metadata.
             {"role": "system", "content": system_prompt},
             {"role": "user",   "content": text}
         ],
-        temperature=0.7,
-        max_tokens=1600
+        temperature=0.75,
+        max_tokens=2048
     )
     return response.choices[0].message.content.strip()
 
@@ -73,9 +72,17 @@ textarea { background-color: #121212 !important; color: #ffffff !important; bord
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="centered-container"><h1>🤖 InfiniAi-Humanizer</h1><p>Turn robotic AI text into real, natural, human-sounding writing.</p></div>', unsafe_allow_html=True)
+st.markdown(
+    '<div class="centered-container"><h1>🤖 InfiniAi-Humanizer</h1>'
+    '<p>Turn robotic AI text into real, natural, human-sounding writing.</p></div>',
+    unsafe_allow_html=True
+)
 
-input_text = st.text_area("Paste your AI-generated academic text below (Max: 10,000 characters):", height=280, max_chars=10000)
+input_text = st.text_area(
+    "Paste your AI-generated academic text below (Max: 10,000 characters):",
+    height=280,
+    max_chars=10000
+)
 
 if len(input_text) > 10000:
     st.warning("⚠️ Your input is over 10,000 characters. Only the first 10,000 characters will be used.")
@@ -93,14 +100,25 @@ if st.button("🔁 Humanize / Re-Humanize Text"):
 
 if st.session_state.human_output:
     st.markdown("### ✍️ Humanized Output")
-    edited_output = st.text_area("Edit your result below:", value=st.session_state.human_output, height=300)
+    edited_output = st.text_area(
+        "Edit your result below:",
+        value=st.session_state.human_output,
+        height=300
+    )
     st.session_state.human_output = edited_output
 
     words = len(edited_output.split())
     score = round(textstat.flesch_reading_ease(edited_output), 1)
-    st.markdown(f"**📊 Output Word Count:** {words} &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp; **🧠 Readability Score:** {score}%")
+    st.markdown(
+        f"**📊 Output Word Count:** {words} &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp; **🧠 Readability Score:** {score}%"
+    )
 
-    st.download_button("💾 Download Output", data=edited_output, file_name="humanized_output.txt", mime="text/plain")
+    st.download_button(
+        "💾 Download Output",
+        data=edited_output,
+        file_name="humanized_output.txt",
+        mime="text/plain"
+    )
 
 st.markdown("**Version 4.5**")
 st.markdown("---")
