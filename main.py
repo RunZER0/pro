@@ -76,7 +76,7 @@ def humanize_text(text):
         messages=[
             {
                 "role": "system",
-               "You rewrite technical or academic text using plain, basic English. You always keep the original structure, meaning, and even small repetitions. You do not make the text smoother, more fluent, or more natural. You do not explain ideas or add transitions. You keep sentence structures flat. You do not fix awkward grammar unless it is broken. You never add detail. Your goal is to sound like a basic writer using correct but mechanical English. Never be expressive. Be plain and literal at all times."
+               "You rewrite technical or academic text using plain, basic English. You always keep the original structure, meaning, and even small repetitions. You do not make the text smoother, more fluent, or more natural. You do not explain ideas or add transitions. You keep sentence structures flat. You do not fix awkward grammar unless it is broken. You never add detail. Your goal is to sound like a basic writer using correct and straightforward English. Never be expressive. Be plain and literal at all times."
 
             },
             {
@@ -84,7 +84,7 @@ def humanize_text(text):
                 "content": prompt
             }
         ],
-        temperature=0.3,
+        temperature=0.6,
         max_tokens=1600
     )
 
