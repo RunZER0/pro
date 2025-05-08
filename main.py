@@ -14,7 +14,10 @@ if "last_input_text" not in st.session_state:
     st.session_state.last_input_text = ""
 
 # === HUMANIZER v4.2.1 — Precision Student Mode ===
-# Vocab simplification map
+import re
+import openai
+
+# 🔁 Simplification map for advanced vocab
 SYNONYMS = {
     "utilize": "use",
     "therefore": "so",
@@ -38,54 +41,58 @@ SYNONYMS = {
     "enhanced": "better",
     "flexible": "bendy",
     "robust": "strong",
+    "transmitting": "moving",
+    "torsional": "twisting",
+    "powertrain": "drivetrain"
 }
 
 def downgrade_vocab(text):
-    for word, simple in SYNONYMS.items():
-        text = re.sub(rf'\b{word}\b', simple, text, flags=re.IGNORECASE)
+    for word, replacement in SYNONYMS.items():
+        text = re.sub(rf"\b{word}\b", replacement, text, flags=re.IGNORECASE)
     return text
 
-def force_short_sentences(text):
-    # Add breaklines after punctuation to help GPT segment
-    text = re.sub(r'([.!?])\s+', r'\1\n', text)
+def mildly_break_sentences(text):
+    # Add line breaks after periods to help GPT chunk ideas, but only when the next sentence is not a continuation
+    text = re.sub(r'(?<=[.!?])\s+(?=[A-Z])', '.\n', text)
     return text
 
 def humanize_text(text):
     # Step 1: Preprocess
     simplified = downgrade_vocab(text)
-    shortened = force_short_sentences(simplified)
+    segmented = mildly_break_sentences(simplified)
 
-    # Step 2: Constrained prompt to enforce target behavior
+    # Step 2: Prompt setup
     prompt = (
-        "Rewrite the following text using basic English. Do not add, explain, or rephrase with style. "
-        "Split long sentences into short ones. Make the grammar simple. Do not use advanced words. "
-        "Do not try to sound natural or fluent. Just make it simple, short, and literal. Assume a non-native speaker with beginner-level English.\n\n"
-        f"{shortened}"
+        "Rewrite the following text using simple, clear English. Keep all original meaning. "
+        "Do not add new ideas. Do not explain or expand. Use shorter sentences where helpful, "
+        "but allow longer ones when needed. Preserve slight repetition if it is present. "
+        "The tone should be plain, direct, and literal. Do not improve flow or polish the language.\n\n"
+        f"{segmented}"
     )
 
+    # Step 3: OpenAI call
     response = openai.chat.completions.create(
         model="gpt-4o",
         messages=[
             {
                 "role": "system",
-                "content": "You rewrite text in flat, short, basic English. No extra details. No style. Just short, literal sentences."
+               "You rewrite technical or academic text using plain, basic English. You always keep the original structure, meaning, and even small repetitions. You do not make the text smoother, more fluent, or more natural. You do not explain ideas or add transitions. You keep sentence structures flat. You do not fix awkward grammar unless it is broken. You never add detail. Your goal is to sound like a basic writer using correct but mechanical English. Never be expressive. Be plain and literal at all times."
+
             },
             {
                 "role": "user",
                 "content": prompt
             }
         ],
-        temperature=0.2,
+        temperature=0.3,
         max_tokens=1600
     )
 
-    raw_output = response.choices[0].message.content.strip()
+    result = response.choices[0].message.content.strip()
 
-    # Step 3: Postprocess – clean up extra spacing
-    cleaned = re.sub(r'\n{2,}', '\n\n', raw_output)
-    cleaned = re.sub(r'\s+', ' ', cleaned)
-    cleaned = re.sub(r'\.([A-Z])', r'. \1', cleaned)
-    return cleaned.strip()
+    # Step 4: Light cleanup
+    result = re.sub(r'\n{2,}', '\n\n', result)
+    return result
 
 # === UI (v4.4 layout with v4.5 label) ===
 st.markdown("""
