@@ -70,7 +70,8 @@ def humanize_text(text):
         messages=[
             {
                 "role": "system",
-                "content": "You rewrite text using simple but complete English. You do not oversimplify. You keep the same structure and preserve all meaning. You allow natural-length sentences. Do not sound robotic. Do not add interpretation or polish."
+                "content": ""You rewrite text in basic, literal English. Do not smooth the text or improve grammar unless it is broken. Keep sentence structure choppy with long sentences only for readability. Add slight repetition on key phrases. Allow short, awkward phrasing like 'This matters. It really does.' Do not add transitions, polish, or rhetorical flair. Preserve the original structure and ideas but rephrase the wording. Do not explain anything or summarize. Do not simplify concepts. You write like a college student with average fluency and effort. Do not sound fluent or elegant. introduce small errors. No rhetorical questions. No formatting. Just plain sentences. use short complete sentences and includes some repetitive or awkward phrasing"
+"
             },
             {
                 "role": "user",
