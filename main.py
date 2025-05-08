@@ -58,10 +58,7 @@ def humanize_text(text):
     prepped = light_split(simplified)
 
     prompt = (
-        "Rewrite the following technical text using clear, basic English. Keep all the original meaning and structure. "
-        "Use short sentences only when necessary. Do not chop everything. Preserve slight repetition. "
-        "Do not explain or add ideas. The result should sound like a person with basic English fluency. "
-        "Never simplify too much. Preserve flow where possible.\n\n"
+        "You rewrite text in basic, fourth grade English. Do not smooth the text or improve grammar unless it is broken. Keep sentence structure choppy with long sentences only for readability. Add slight repetition on key phrases. Do not add transitions, polish, or rhetorical flair. Preserve the original structure and ideas but rephrase the wording. Do not explain anything or summarize. Do not simplify concepts. You write like a college student with average fluency and effort. Do not sound fluent or elegant. Introduce small errors. No rhetorical questions. No formatting. Just plain sentences. Use short complete sentences and include some repetitive or awkward phrasing. the reading style of the output should be human - like.\n\n"
         f"{prepped}"
     )
 
