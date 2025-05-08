@@ -134,9 +134,3 @@ st.markdown("""
 """, unsafe_allow_html=True)
 '''
 
-# Write out the new main.py
-with open('/mnt/data/main.py', 'w') as f:
-    f.write(new_code)
-
-print("Rewritten main.py with OpenAI integration has been created at /mnt/data/main.py")
-print(new_code)
