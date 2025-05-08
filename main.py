@@ -1,6 +1,6 @@
-# Rewriting main.py with proper quoting and OpenAI integration
+# Rewriting main.py to integrate OpenAI-powered humanizer while preserving the original UI block.
 
-corrected_code = '''import streamlit as st
+updated_code = '''import streamlit as st
 import openai
 import textstat
 
@@ -10,13 +10,15 @@ openai.api_key = st.secrets["OPENAI_API_KEY"]
 # Initialize session state
 if "human_output" not in st.session_state:
     st.session_state.human_output = ""
+if "previous_inputs" not in st.session_state:
+    st.session_state.previous_inputs = {}
 if "last_input_text" not in st.session_state:
     st.session_state.last_input_text = ""
 
-# === AI-Powered Humanizer Engine v6.0 ===
+# === AI-Powered Humanizer v6.0 ===
 def humanize_text(text: str) -> str:
     system_prompt = """
-You are an expert academic humanizer. Given AI-generated scholarly text, you will transform it into natural, human-like prose while embedding the following stylistic manipulations:
+You are an expert academic humanizer. Given AI-generated scholarly text, transform it into natural, human-like prose while embedding these stylistic manipulations:
 
 1. Sentence-Length Sculpting:
    - Alternate between long, clause-rich sentences and brief, punchy statements.
@@ -51,12 +53,12 @@ Return ONLY the transformed text—no explanations or metadata.
         model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": text}
+            {"role": "user",   "content": text}
         ],
         temperature=0.7,
-        max_tokens=2048
+        max_tokens=1600
     )
-    return response.choices[0].message.content
+    return response.choices[0].message.content.strip()
 
 # === UI (v4.4 layout with v4.5 label) ===
 st.markdown("""
@@ -130,4 +132,5 @@ st.markdown("""
         <em>"Passed the AI check with flying colors. And my professor said it felt authentic."</em><br><strong>- Kate</strong>
     </div>
 </div>
-""", unsafe_allow_html=True)
+'''
+
