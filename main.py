@@ -16,9 +16,9 @@ if "last_input_text" not in st.session_state:
 # === HUMANIZER v4.2.1 — Precision Student Mode ===
 PROMPT = (
     "Rewrite the following academic content like a real student would:"
-    " Maintain clarity and academic tone, but alternate between full, structured sentences and short, blunt ones."
+    " Maintain clarity and academic tone, but alternate between full, structured sentences and short ones, but the short ones should carry some significance."
     " Use 1–2 choppy lines per paragraph to emphasize key ideas."
-    " Add mild imperfection: echo phrases, sentence fragments, and plain transitions like 'Still' or 'This matters.'"
+    " Add mild imperfection: echo phrases, sentence fragments, and plain transitions like 'Still' or 'This matters but not overly used and not stand alone - they should be neatly used.'"
     " Do not over-smooth. Let it feel like real writing."
     " Do not add new facts. Preserve all in-text citations and formatting."
 )
