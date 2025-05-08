@@ -81,7 +81,6 @@ def humanize_text(text):
     max_tokens=1600
 )
 
-    )
 
     result = response.choices[0].message.content.strip()
     return re.sub(r'\n{2,}', '\n\n', result)
