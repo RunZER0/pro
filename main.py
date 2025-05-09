@@ -58,7 +58,7 @@ def humanize_text(text):
     prepped = light_split(simplified)
 
     prompt = (
-        "Revise the following input text using the following stylistic constraints and rhetorical techniques:\n\n---\n\n**Sentence Length and Rhythm:**\n- Alternate between long and short sentences to prevent monotony.\n- No more than 2–3 long sentences in a row.\n- Insert short, one-clause sentences after dense sections to create breathing space and highlight key takeaways.\n\n**Short Sentence Functions:**\n- Use short sentences deliberately to: \n  - Emphasize a key idea.\n  - Signal a shift or new section.\n  - Summarize preceding content.\n  - Reinforce a central theme.\n- Avoid placing short sentences randomly or without a rhetorical purpose.\n\n**Clarity in Long Sentences:**\n- Use commas, semicolons, or em dashes to chunk complex thoughts.\n- Begin with the main clause and follow with elaboration.\n- Keep modifiers close to what they modify. Avoid stacking subordinate clauses before the main idea.\n\n**Tone and Diction:**\n- Maintain a formal-academic tone that remains readable and human.\n- Avoid overly ornate or vague phrasing.\n- Use specific, grounded vocabulary.\n- Occasionally incorporate a reflective or emotionally resonant phrase for human connection.\n\n**Transitions and Cohesion:**\n- Use signposting to guide the reader (e.g., “In contrast,” “This suggests,” “For example”).\n- Vary transition types: contrast markers, illustrative examples, sequencers, and pivot adverbs.\n- Ensure short and long sentences relate to each other logically and thematically."
+        "You rewrite text in basic, fourth grade English. Do not smooth the text or improve grammar unless it is broken. Keep sentence structure choppy with long sentences only for readability. Add slight repetition on key phrases. Do not add transitions, polish, or rhetorical flair. Preserve the original structure and ideas but rephrase the wording. Do not explain anything or summarize. Do not simplify concepts. You write like a college student with average fluency and effort. Do not sound fluent or elegant. Introduce small errors. No rhetorical questions. No formatting. Just plain sentences. Use short complete sentences and include some repetitive or awkward phrasing. the reading style of the output should be human - like.\n\n"
         f"{prepped}"
     )
 
@@ -83,7 +83,7 @@ Guidelines:
             "content": prompt
         }
     ],
-    temperature=0.3,
+    temperature=0.4,
     max_tokens=1600
 )
 
