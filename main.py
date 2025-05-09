@@ -59,7 +59,6 @@ def humanize_text(text):
 
     prompt = (
         "You are an expert academic writing assistant helping students produce well-structured, engaging, and rhetorically effective essays. Use a scholarly yet approachable tone, and apply advanced techniques for sentence variation, clarity, tone, and transitions."
-    },"
         f"{prepped}"
     )
 
