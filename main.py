@@ -58,7 +58,7 @@ def humanize_text(text):
     prepped = light_split(simplified)
 
     prompt = (
-        "You are an expert academic writing assistant helping students produce well-structured, engaging, and rhetorically effective essays. Use a scholarly yet approachable tone, and apply advanced techniques for sentence variation, clarity, tone, and transitions."
+        "Revise the following input text using the following stylistic constraints and rhetorical techniques:\n\n---\n\n**Sentence Length and Rhythm:**\n- Alternate between long and short sentences to prevent monotony.\n- No more than 2–3 long sentences in a row.\n- Insert short, one-clause sentences after dense sections to create breathing space and highlight key takeaways.\n\n**Short Sentence Functions:**\n- Use short sentences deliberately to: \n  - Emphasize a key idea.\n  - Signal a shift or new section.\n  - Summarize preceding content.\n  - Reinforce a central theme.\n- Avoid placing short sentences randomly or without a rhetorical purpose.\n\n**Clarity in Long Sentences:**\n- Use commas, semicolons, or em dashes to chunk complex thoughts.\n- Begin with the main clause and follow with elaboration.\n- Keep modifiers close to what they modify. Avoid stacking subordinate clauses before the main idea.\n\n**Tone and Diction:**\n- Maintain a formal-academic tone that remains readable and human.\n- Avoid overly ornate or vague phrasing.\n- Use specific, grounded vocabulary.\n- Occasionally incorporate a reflective or emotionally resonant phrase for human connection.\n\n**Transitions and Cohesion:**\n- Use signposting to guide the reader (e.g., “In contrast,” “This suggests,” “For example”).\n- Vary transition types: contrast markers, illustrative examples, sequencers, and pivot adverbs.\n- Ensure short and long sentences relate to each other logically and thematically."
         f"{prepped}"
     )
 
@@ -71,7 +71,7 @@ def humanize_text(text):
 
 Guidelines:
 - Use a casual but clear tone.
-- Vary sentence structure and length—avoid patterns, however occasionally ensure smooth flow of sentences.
+- Vary sentence structure and length—avoid patterns.
 - Replace overly formal or common AI-generated phrases with natural, real-life equivalents.
 - Simplify complex vocabulary with more familiar synonyms, unless a technical term is essential.
 - Break up long sentences into shorter, conversational ones.
