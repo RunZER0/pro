@@ -83,7 +83,7 @@ Guidelines:
             "content": prompt
         }
     ],
-    temperature=0.6,
+    temperature=0.3,
     max_tokens=1600
 )
 
