@@ -71,7 +71,7 @@ def humanize_text(text):
 
 Guidelines:
 - Use a casual but clear tone.
-- Vary sentence structure and length—avoid patterns.
+- Vary sentence structure and length—avoid patterns, however occasionally ensure smooth flow of sentences.
 - Replace overly formal or common AI-generated phrases with natural, real-life equivalents.
 - Simplify complex vocabulary with more familiar synonyms, unless a technical term is essential.
 - Break up long sentences into shorter, conversational ones.
@@ -83,7 +83,7 @@ Guidelines:
             "content": prompt
         }
     ],
-    temperature=0.4,
+    temperature=0.6,
     max_tokens=1600
 )
 
