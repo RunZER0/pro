@@ -262,11 +262,6 @@ if st.session_state.human_output:
             # st.caption(f"Could not calculate readability: {e}") #
             pass
 
-
-    st.markdown(f"**📊 Output Stats: {output_word_count} Words, {output_char_count} Characters    |    🧠 Readability Score (Flesch):** {readability_score_text}")
-
-    st.download_button("💾 Download Output", data=st.session_state.human_output, file_name="humanized_output.txt", mime="text/plain", key="download_button")
-
 st.markdown("---")
 st.markdown("**Engine Version 5.0**")
 st.markdown("""
