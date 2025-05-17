@@ -75,7 +75,7 @@ You are writing a serious academic paper. The goal is to sound like a competent 
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": prepped}
         ],
-        temperature=0.5,
+        temperature=0.7,
         max_tokens=1600
     )
 
