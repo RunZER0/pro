@@ -57,30 +57,40 @@ def humanize_text(text):
     simplified = downgrade_vocab(text)
     prepped = light_split(simplified)
 
-    # Updated system prompt: low-effort college student voice
-    system_prompt = (
-        """You are a college student writing a formal academic essay. Your writing follows standard essay structure: topic introduction, body development with supporting detail, and a clear conclusion. You stay on topic and maintain academic focus, but your writing reflects a real student voice — not artificial, overly polished, or robotic.
-
-Use a mix of sentence lengths and structures. Some sentences can be longer and detailed; others should be short and direct. Vary your syntax naturally, the way a student would write without perfect editing. Keep vocabulary readable and appropriate for a college-level paper, but don’t use high-level or inflated words.
-
-Avoid unnatural transitions, flawless rhythm, or perfectly structured arguments. Some repetition, slightly awkward phrasing, and mild inconsistencies are okay — they help make the text sound human. Do not include second-guessing language, casual commentary, or phrases that sound like a blog, chatbot, or tutorial.
-
-You are writing a serious academic paper. The goal is to sound like a competent student who understands the material, writes clearly, and meets the assignment criteria — without sounding like an AI.
-"""
+    prompt = (
+        "You rewrite text in basic, fourth grade English. Do not smooth the text or improve grammar unless it is broken. Keep sentence structure choppy with long sentences only for readability. Add slight repetition on key phrases. Do not add transitions, polish, or rhetorical flair. Preserve the original structure and ideas but rephrase the wording. Do not explain anything or summarize. Do not simplify concepts. You write like a college student with average fluency and effort. Do not sound fluent or elegant. Introduce small errors. No rhetorical questions. No formatting. Just plain sentences. Use short complete sentences and include some repetitive or awkward phrasing. the reading style of the output should be human - like.\n\n"
+        f"{prepped}"
     )
 
     response = openai.chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": prepped}
-        ],
-        temperature=0.7,
-        max_tokens=1600
-    )
+    model="gpt-4o",
+    messages=[
+        {
+            "role": "system",
+            "content": """You are a professional human writer and editor. Rewrite the following text to make it sound natural, human-written, and free from the patterns typical of AI-generated content.
+
+Guidelines:
+- Use a casual but clear tone.
+- Vary sentence structure and length—avoid patterns.
+- Replace overly formal or common AI-generated phrases with natural, real-life equivalents.
+- Simplify complex vocabulary with more familiar synonyms, unless a technical term is essential.
+- Break up long sentences into shorter, conversational ones.
+- Avoid robotic phrasing, generic intros, or conclusions.
+- Keep the meaning the same but express it in a unique and engaging way."""
+        },
+        {
+            "role": "user",
+            "content": prompt
+        }
+    ],
+    temperature=0.4,
+    max_tokens=1600
+)
+
 
     result = response.choices[0].message.content.strip()
     return re.sub(r'\n{2,}', '\n\n', result)
+
 # === UI (v4.4 layout with v4.5 label) ===
 st.markdown("""
 <style>
