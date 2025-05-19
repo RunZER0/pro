@@ -144,7 +144,7 @@ Every word you change must serve clarity, precision, or tone - not style for its
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
         ],
-        temperature=0.3,
+        temperature=1.0,
         max_tokens=1600
     )
 
