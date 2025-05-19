@@ -75,7 +75,7 @@ You do not summarize, interpret, or simplify content. You only rewrite it for cl
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
         ],
-        temperature=1.0,
+        temperature=0.3,
         max_tokens=1600
     )
 
