@@ -52,11 +52,26 @@ def light_split(text):
 def split_into_sentences(text):
     return re.split(r'(?<=[.!?])\s+', text.strip())
 
+def is_important(sentence):
+    """Check if sentence contains meaningful content (not a stat, name, or label)."""
+    keywords = ['violation', 'impact', 'consequence', 'response', 'failure', 'highlight', 'violence', 'right', 'community']
+    return any(word in sentence.lower() for word in keywords) and len(sentence.split()) > 8
+
+def deduplicate(sentences):
+    seen = set()
+    unique = []
+    for s in sentences:
+        cleaned = s.strip().lower()
+        if cleaned not in seen:
+            unique.append(s)
+            seen.add(cleaned)
+    return unique
+
 def add_sentence_variation(sentences):
     new_sentences = []
     for sentence in sentences:
         words = sentence.split()
-        if len(words) > 18 and random.random() < 0.5:
+        if len(words) > 20 and random.random() < 0.5:
             parts = re.split(r'(,| and | but )', sentence)
             chunks = []
             current = ""
@@ -68,35 +83,30 @@ def add_sentence_variation(sentences):
             if current:
                 chunks.append(current.strip())
             new_sentences.extend(chunks)
-        elif len(words) < 6 and random.random() < 0.4:
-            if new_sentences:
-                new_sentences[-1] += ' ' + sentence
-            else:
-                new_sentences.append(sentence)
         else:
             new_sentences.append(sentence)
     return new_sentences
 
 def add_professional_redundancy(sentences):
     clarifiers = [
-        "This means that {}.",
-        "As a result, {}.",
-        "{} This could affect other operations.",
-        "{} This highlights the importance of clarity."
+        "This shows how severe the situation was.",
+        "This had long-lasting consequences.",
+        "This underscores the seriousness of the issue.",
+        "This highlights a systemic failure."
     ]
-    enhanced = []
-    for sentence in sentences:
-        enhanced.append(sentence)
-        if random.random() < 0.25 and len(sentence.split()) > 8:
-            phrased = random.choice(clarifiers).format(sentence.rstrip('.'))
-            enhanced.append(phrased)
-    return enhanced
+    result = []
+    for s in sentences:
+        result.append(s)
+        if is_important(s) and random.random() < 0.25:
+            result.append(random.choice(clarifiers))
+    return result
 
 def post_process_text(text):
     sentences = split_into_sentences(text)
-    varied = add_sentence_variation(sentences)
-    redundant = add_professional_redundancy(varied)
-    return ' '.join(redundant)
+    sentences = deduplicate(sentences)
+    sentences = add_sentence_variation(sentences)
+    sentences = add_professional_redundancy(sentences)
+    return ' '.join(sentences)
 
 def humanize_text(text):
     simplified = downgrade_vocab(text)
@@ -104,19 +114,14 @@ def humanize_text(text):
 
     # Strict, professional GPT prompt
     system_prompt = (
-        "You are a language transformation engine that rewrites technical or robotic text into clear, plain English. "
-        "Your output must:\n"
-        "- Maintain a professional and neutral tone\n"
-        "- Avoid conversational or casual phrasing (no 'you', 'we', 'let’s', etc.)\n"
-        "- Remove unnecessary jargon\n"
-        "- Preserve the original meaning exactly\n"
-        "- Use sentence structures that feel natural, with light variation\n"
-        "- Avoid fillers like 'in other words', 'basically', etc.\n"
-        "- Do not summarize or interpret the text\n"
-        "The tone should be similar to a technical report or official documentation."
-    )
+        "You are a professional editor. Rewrite the input text to make it clear and readable without being overly polished or mechanical. "
+    "The tone must be professional, not casual, but should still feel like it was written by a real human, not an AI. "
+    "Avoid any chatty or friendly language. Do not use summaries, rhetorical questions, or overly formal constructions. "
+    "Vary sentence length and structure slightly to improve natural flow. Keep the meaning and factual content exactly the same. "
+    "Do not explain or expand the ideas. Focus purely on rewriting with smooth, natural clarity in a professional tone."
+)
 
-    user_prompt = f"Rewrite the following text clearly and professionally:\n\n{prepped}"
+    user_prompt = f"Rewrite the following text clearly and professionally as per the system prompt:\n\n{prepped}"
 
     response = openai.chat.completions.create(
         model="gpt-4o",
@@ -132,7 +137,7 @@ def humanize_text(text):
     processed = post_process_text(result)
     return re.sub(r'\n{2,}', '\n\n', processed)
 
-# === Streamlit UI ===
+# === UI (v4.4 layout with v4.5 label) ===
 st.markdown("""
 <style>
 .stApp { background-color: #0d0d0d; color: #00ffff; font-family: 'Segoe UI', monospace; text-align: center; }
@@ -176,23 +181,32 @@ if st.session_state.human_output:
 
     st.download_button("💾 Download Output", data=edited_output, file_name="humanized_output.txt", mime="text/plain")
 
-st.markdown("**Version 4.5 — Custom Professional Humanizer**")
+st.markdown("**Version 4.5**")
 st.markdown("---")
 st.markdown("""
 <div class='features-grid'>
     <div class='feature'>
         <strong>✍️ Natural Cadence:</strong><br>
-        Your words flow like a real human writer — no AI rigidity.
+        Your words flow like a real student — no rigid AI rhythm.
     </div>
     <div class='vertical-divider'></div>
     <div class='feature'>
         <strong>🔁 Structured Variance:</strong><br>
-        Sentence rhythm feels natural, not machine-generated.
+        Paragraphs are well balanced for human clarity.
     </div>
     <div class='vertical-divider'></div>
     <div class='feature'>
-        <strong>📚 Professional Clarity:</strong><br>
-        Clear, technical tone without jargon or chatty phrasing.
+        <strong>📚 Academic Realism:</strong><br>
+        The tone mimics thoughtful effort, not perfect computation.
+    </div>
+</div>
+
+<div class='features-grid'>
+    <div class='comment'>
+        <em>"This actually sounds like I wrote it after a long study night."</em><br><strong>- Joseph</strong>
+    </div>
+    <div class='comment'>
+        <em>"Passed the AI check with flying colors. And my professor said it felt authentic."</em><br><strong>- Kate</strong>
     </div>
 </div>
 """, unsafe_allow_html=True)
