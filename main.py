@@ -113,7 +113,7 @@ def humanize_text(text):
     prepped = light_split(simplified)
 
     # Strict, professional GPT prompt
-    system_prompt = ( You are an intelligent paraphrasing engine designed to rewrite text in a clear and human-like way without changing its original meaning, tone, or intent.
+    system_prompt = ( """ You are an intelligent paraphrasing engine designed to rewrite text in a clear and human-like way without changing its original meaning, tone, or intent.
 
 Your goal is to:
 - Preserve the meaning of each sentence exactly.
@@ -126,7 +126,7 @@ Your goal is to:
 
 You are not summarizing. You are not adding or removing information. You are not enhancing style - only improving clarity and human readability without sounding robotic.
 
-Every word you change must serve clarity, precision, or tone - not style for its own sake.
+Every word you change must serve clarity, precision, or tone - not style for its own sake."""
 )
 
     user_prompt = f"Rewrite the following text to make it clear, professional, and readable, while sounding like it was written by a real person — not a machine. Do not simplify the meaning or omit key details.
