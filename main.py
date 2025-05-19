@@ -42,8 +42,7 @@ SYNONYMS = {
 }
 
 def humanize_text(text):
-    simplified = downgrade_vocab(text)
-    prepped = light_split(simplified)
+    prepped = text
 
     # Strict, professional GPT prompt
     system_prompt = ( """ You are a text humanizer that rewrites robotic, technical, or overly rigid content into clean, readable English suitable for an academic essay.
