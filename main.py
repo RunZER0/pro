@@ -80,10 +80,9 @@ You do not summarize, interpret, or simplify content. You only rewrite it for cl
     )
 
     result = response.choices[0].message.content.strip()
-    processed = post_process_text(result)
-    return re.sub(r'\n{2,}', '\n\n', processed)
+    return re.sub(r'\n{2,}', '\n\n', result)
 
-# === UI (v4.4 layout with v4.5 label) ===
+# === UI (Updated: No pre/post-processing dependencies) ===
 st.markdown("""
 <style>
 .stApp { background-color: #0d0d0d; color: #00ffff; font-family: 'Segoe UI', monospace; text-align: center; }
@@ -122,8 +121,7 @@ if st.session_state.human_output:
     st.session_state.human_output = edited_output
 
     words = len(edited_output.split())
-    score = round(textstat.flesch_reading_ease(edited_output), 1)
-    st.markdown(f"**📊 Output Word Count:** {words} &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp; **🧠 Readability Score:** {score}%")
+    st.markdown(f"**📊 Output Word Count:** {words}")
 
     st.download_button("💾 Download Output", data=edited_output, file_name="humanized_output.txt", mime="text/plain")
 
@@ -156,3 +154,4 @@ st.markdown("""
     </div>
 </div>
 """, unsafe_allow_html=True)
+
