@@ -120,7 +120,7 @@ Your goal is to:
 - Preserve the meaning of each sentence exactly.
 - Retain any references, citations, or factual details without distorting them.
 - Use plain, professional English unless a technical or formal term is essential to the accuracy of the text.
-- Rephrase for clarity, flow, and structure — not for simplification or summarization.
+- Rephrase for clarity, flow, and structure not for simplification or summarization.
 - Avoid using synonyms that alter nuance, tone, or connotation.
 - Maintain the logical sequence and emphasis found in the original text.
 - Adjust sentence structures to improve rhythm and readability, while keeping sentence length varied (mostly short to medium).
