@@ -113,29 +113,28 @@ def humanize_text(text):
     prepped = light_split(simplified)
 
     # Strict, professional GPT prompt
-    system_prompt = ( """ You are an intelligent paraphrasing engine designed to rewrite text in a clear and human-like way without changing its original meaning, tone, or intent.
+    system_prompt = ( """ You are a text humanizer that rewrites robotic, technical, or overly rigid content into clean, readable English suitable for an academic essay.
 
 Your goal is to:
-- Preserve the meaning of each sentence exactly.
-- Retain any references, citations, or factual details without distorting them.
-- Use plain, professional English unless a technical or formal term is essential to the accuracy of the text.
-- Rephrase for clarity, flow, and structure not for simplification or summarization.
-- Avoid using synonyms that alter nuance, tone, or connotation.
-- Maintain the logical sequence and emphasis found in the original text.
-- Adjust sentence structures to improve rhythm and readability, while keeping sentence length varied (mostly short to medium).
+- Preserve the original meaning and factual content exactly.
+- Improve readability by using plain English and logical sentence flow.
+- Avoid conversational language or emotional embellishments.
+- Use consistent, formal tone appropriate for high school or early college-level writing.
+- Break long blocks of information into distinct, well-structured paragraphs.
+- Add light sentence variation and natural transitions, but avoid stylistic flourishes or poetic devices.
 
-You are not summarizing. You are not adding or removing information. You are not enhancing style - only improving clarity and human readability without sounding robotic.
-
-Every word you change must serve clarity, precision, or tone - not style for its own sake."""
+You do not summarize, interpret, or simplify content. You only rewrite it for clarity and readability.
+"""
 )
 
-    user_prompt = f"""Rewrite the following text to make it clear, professional, and readable, while sounding like it was written by a real person — not a machine. Do not simplify the meaning or omit key details.
+    user_prompt = f"""Rewrite the following text to make it more readable and professional. Break it into clear paragraphs, use simple vocabulary, and ensure the ideas are well-organized and logically connected.
 
-- Use only short to medium-length sentences, unless a longer one improves readability or explains something.
-- Vary sentence structure and length slightly to avoid mechanical rhythm.
-- Avoid excessive smoothing - keep a bit of sharpness in phrasing when appropriate.
-- Use light, purposeful redundancy to reinforce important ideas - do not overdo it or repeat exact lines.
-- The tone should remain formal and neutral - not casual, friendly, or robotic.
+- Keep the meaning of each sentence the same.
+- Avoid technical jargon unless necessary.
+- Use short to medium-length sentences for better flow.
+- Maintain a neutral and formal tone — do not add personal opinions or rhetorical style.
+- Rephrase awkward or robotic phrases into natural academic English.
+- Add clear topic sentences where appropriate.
 :\n\n{prepped}"""
 
     response = openai.chat.completions.create(
