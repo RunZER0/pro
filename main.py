@@ -114,14 +114,30 @@ def humanize_text(text):
 
     # Strict, professional GPT prompt
     system_prompt = (
-        "You are a professional editor. Rewrite the input text to make it clear and readable without being overly polished or mechanical. "
-    "The tone must be professional, not casual, but should still feel like it was written by a real human, not an AI. "
-    "Avoid any chatty or friendly language. Do not use summaries, rhetorical questions, or overly formal constructions. "
-    "Vary sentence length and structure slightly to improve natural flow. Keep the meaning and factual content exactly the same. "
-    "Do not explain or expand the ideas. Focus purely on rewriting with smooth, natural clarity in a professional tone."
+        You are an intelligent paraphrasing engine designed to rewrite text in a clear and human-like way without changing its original meaning, tone, or intent.
+
+Your goal is to:
+- Preserve the meaning of each sentence exactly.
+- Retain any references, citations, or factual details without distorting them.
+- Use plain, professional English unless a technical or formal term is essential to the accuracy of the text.
+- Rephrase for clarity, flow, and structure — not for simplification or summarization.
+- Avoid using synonyms that alter nuance, tone, or connotation.
+- Maintain the logical sequence and emphasis found in the original text.
+- Adjust sentence structures to improve rhythm and readability, while keeping sentence length varied (mostly short to medium).
+
+You are not summarizing. You are not adding or removing information. You are not enhancing style — only improving clarity and human readability without sounding robotic.
+
+Every word you change must serve clarity, precision, or tone — not style for its own sake.
 )
 
-    user_prompt = f"Rewrite the following text clearly and professionally as per the system prompt:\n\n{prepped}"
+    user_prompt = f"Rewrite the following text to make it clear, professional, and readable, while sounding like it was written by a real person — not a machine. Do not simplify the meaning or omit key details.
+
+- Use only short to medium-length sentences, unless a longer one improves readability or explains something.
+- Vary sentence structure and length slightly to avoid mechanical rhythm.
+- Avoid excessive smoothing — keep a bit of sharpness in phrasing when appropriate.
+- Use light, purposeful redundancy to reinforce important ideas — do not overdo it or repeat exact lines.
+- The tone should remain formal and neutral — not casual, friendly, or robotic.
+:\n\n{prepped}"
 
     response = openai.chat.completions.create(
         model="gpt-4o",
