@@ -129,14 +129,14 @@ You are not summarizing. You are not adding or removing information. You are not
 Every word you change must serve clarity, precision, or tone - not style for its own sake."""
 )
 
-    user_prompt = f"Rewrite the following text to make it clear, professional, and readable, while sounding like it was written by a real person — not a machine. Do not simplify the meaning or omit key details.
+    user_prompt = f"""Rewrite the following text to make it clear, professional, and readable, while sounding like it was written by a real person — not a machine. Do not simplify the meaning or omit key details.
 
 - Use only short to medium-length sentences, unless a longer one improves readability or explains something.
 - Vary sentence structure and length slightly to avoid mechanical rhythm.
 - Avoid excessive smoothing - keep a bit of sharpness in phrasing when appropriate.
 - Use light, purposeful redundancy to reinforce important ideas - do not overdo it or repeat exact lines.
 - The tone should remain formal and neutral - not casual, friendly, or robotic.
-:\n\n{prepped}"
+:\n\n{prepped}"""
 
     response = openai.chat.completions.create(
         model="gpt-4o",
