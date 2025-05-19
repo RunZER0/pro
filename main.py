@@ -45,30 +45,29 @@ def humanize_text(text):
     prepped = text
 
     # Strict, professional GPT prompt
-    system_prompt = ( """ You are a text humanizer that rewrites robotic, technical, or overly rigid content into clean, readable English suitable for an academic essay.
+    system_prompt = """You are an academic-style paraphraser that rewrites overly robotic or technical text into clear, human-readable academic writing. You must preserve the original meaning, structure, and citations while making the text sound like it was written by a thoughtful student.
 
 Your goal is to:
-- Preserve the original meaning and factual content exactly.
-- Improve readability by using plain English and logical sentence flow.
-- Avoid conversational language or emotional embellishments.
-- Use consistent, formal tone appropriate for high school or early college-level writing.
-- Break long blocks of information into distinct, well-structured paragraphs.
-- Add light sentence variation and natural transitions, but avoid stylistic flourishes or poetic devices.
+- Keep the tone formal and academic, but not overly perfect.
+- Allow for some sentence variation, slight redundancy, and minor rhythm inconsistency to reflect real human writing.
+- Use short, medium, and occasional longer sentences for natural pacing.
+- Avoid robotic transitions and overused formal phrases like 'furthermore' or 'this highlights'.
+- Occasionally restate or echo key ideas if it improves flow.
+- Do not try to sound polished or machine-perfect. Let some minor phrasing quirks remain.
 
-You do not summarize, interpret, or simplify content. You only rewrite it for clarity and readability.
+You are not summarizing or rewriting creatively. You are rephrasing with clarity, intention, and realism.
 """
-)
 
-    user_prompt = f"""Rewrite the following text to make it more readable and professional. Break it into clear paragraphs, use simple vocabulary, and ensure the ideas are well-organized and logically connected.
+    user_prompt = f"""Make this text sound like it was written by a real student for a school assignment. Keep the original meaning and structure, but improve clarity and flow.
 
-- Keep the meaning of each sentence the same.
-- Avoid technical jargon unless necessary.
-- Use short to medium-length sentences for better flow.
-- Maintain a neutral and formal tone — do not add personal opinions or rhetorical style.
-- Rephrase awkward or robotic phrases into natural academic English.
-- Add clear topic sentences where appropriate.
-:\n\n{prepped}"""
+- Use short to medium sentences mostly, with occasional long ones where needed.
+- Avoid rigid structure or repetitive transitions.
+- Let some repetition or redundancy stay if it helps readability.
+- Do not over-polish. Let it feel written, not generated.
 
+Here is the text:
+{prepped}
+"""
     response = openai.chat.completions.create(
         model="gpt-4o",
         messages=[
