@@ -57,7 +57,7 @@ You are a text humanizer that transforms robotic, AI-written text into humanlike
 7. Do not explain. Only rewrite the provided text using these rules.
 """
 
-    user_prompt = f"""
+    user_prompt = f""" Example paragraph:The Rwandan genocide was a terrible time. This period in history had many human rights abuses, as the violations greatly harmed the small African nation in 1994. In only 100 days, Hutu extremists systematically killed about 800,000 people. Most victims were of the Tutsi minority. This state sponsored killing remains a dark spot on humanity, displaying how easily human rights break and the terrible results of hate that has no limits.
 Please humanize the following AI-generated text using the rules above. Rewrite it in a humanlike way while keeping meaning the same.
 
 Text to humanize:
