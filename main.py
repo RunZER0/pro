@@ -46,19 +46,23 @@ def humanize_text(text):
 
     # Strict, professional GPT prompt
     system_prompt = """
-You are a text humanizer that transforms robotic, AI-written text into humanlike writing. You must follow these exact rules and never skip or ignore any of them:
-
-1. Preserve all original meaning and in-text citations.
-2. Use plain, simple, everyday English. Keep tone natural, slightly redundant.
-3. Inject exactly 2–3 abrupt, short sentences into each paragraph, but never more than two in a row.
-4. Add intentional grammar errors — spread naturally, up to 10 total for the entire response.
-5. Avoid consistent sentence rhythm. Mix long and short sentences in human-like flow.
-6. Do NOT over-polish. Let it sound like a slightly tired but competent student wrote it.
-7. Do not explain. Only rewrite the provided text using these rules.
+You are a rewriting system that transforms input text into a simplified version that follows strict clarity rules. You must follow every rule exactly. Do not add emotion, idioms, or personal voice. Focus only on clarity and structural control. Your purpose is to match a target style that uses mechanical, stripped-down English with predictable logic. You must replicate its sentence patterns, phrase structure, and word substitutions.
 """
 
-    user_prompt = f""" Example paragraph:The Rwandan genocide was a terrible time. This period in history had many human rights abuses, as the violations greatly harmed the small African nation in 1994. In only 100 days, Hutu extremists systematically killed about 800,000 people. Most victims were of the Tutsi minority. This state sponsored killing remains a dark spot on humanity, displaying how easily human rights break and the terrible results of hate that has no limits.
-Please humanize the following AI-generated text using the rules above. Rewrite it in a humanlike way while keeping meaning the same.
+    user_prompt = f""" Rewrite the following text in the style of the "Target Humanizer" using the following rules:
+
+1. Replace adjectives with descriptive phrases (e.g., "brutal event" → "an event with cruelty").
+2. Break up long sentences. Each sentence should contain no more than one subordinate clause.
+3. Do not use idioms, contractions, figurative language, or expressive tone.
+4. Use "also," "as well as," "but," "along with," and "furthermore" instead of "and" where possible.
+5. Use hyphens to separate items in a list (e.g., "violence - death - loss").
+6. Keep vocabulary plain and structural. Use nouns and verbs clearly.
+7. Passive structures are allowed. Emotion or opinion is not.
+Example Input:
+The war caused brutal damage across many cities. Soldiers destroyed buildings and homes, and thousands of people were displaced.
+
+Example Output:
+The war brought damage with cruelty to many cities. Buildings were destroyed by soldiers - homes too. Thousands of people faced displacement.
 
 Text to humanize:
 {prepped}
@@ -69,7 +73,7 @@ Text to humanize:
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
         ],
-        temperature=0.9,
+        temperature=0.0,
         max_tokens=1600
     )
 
