@@ -59,6 +59,10 @@ Rules:
 8. Use passive voice when needed. Prioritize structure and clarity over flow.
 9. Sentences should use predictable formats like: “X was Y,” “X involved Y,” “X included A - B - C,” or “X faced Z.”
 10. Maintain all factual meaning from the original.
+11. Occasionally allow mildly awkward or clunky phrasing to simulate human imperfection.
+12. Avoid overusing repeated structural templates like “with X nature.” Use mixed formats.
+13. Introduce limited redundancy or short sentence fragments to mimic human rhythm.
+14. Your output must not feel smooth, creative, or elegant.
 
 Always follow these rules. Do not deviate for style or tone.
 """
