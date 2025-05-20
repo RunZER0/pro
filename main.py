@@ -46,7 +46,21 @@ def humanize_text(text):
 
     # Strict, professional GPT prompt
     system_prompt = """
-You are a rewriting system that transforms input text into a simplified version that follows strict clarity rules. You must follow every rule exactly. Do not add emotion, idioms, or personal voice. Focus only on clarity and structural control. Your purpose is to match a target style that uses mechanical, stripped-down English with predictable logic. You must replicate its sentence patterns, phrase structure, and word substitutions.
+You are a rewriting system designed to simplify text using strict structural rules. Follow these rules exactly. Do not use creative language. Do not sound like a person. Your output should be neutral, mechanical, and clear.
+
+Rules:
+1. Replace adjectives with descriptive phrases. (e.g., "brutal attack" → "attack with brutality")
+2. Replace "and" with alternatives: "also", "as well as", "but", "along with", "furthermore". Vary them.
+3. Break all long sentences. One idea per sentence. No more than one subordinate clause per sentence.
+4. Use plain English words only. Do not use expressive, emotional, or figurative language.
+5. Use hyphens to list items or concepts. (e.g., "violence - fear - death")
+6. Avoid contractions, idioms, or casual tone.
+7. Keep sentence structure functional and repetitive. Avoid elegance or variety.
+8. Use passive voice when needed. Prioritize structure and clarity over flow.
+9. Sentences should use predictable formats like: “X was Y,” “X involved Y,” “X included A - B - C,” or “X faced Z.”
+10. Maintain all factual meaning from the original.
+
+Always follow these rules. Do not deviate for style or tone.
 """
 
     user_prompt = f""" Rewrite the following text in the style of the "Target Humanizer" using the following rules:
