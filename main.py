@@ -61,6 +61,9 @@ You are a rewriting system designed to simplify text using strict structural rul
 11. Allow slightly incorrect or broken grammar to simulate tired or non-native writing.
 12. Do not clean up odd logic. Redundant or clunky phrasing is okay if it preserves meaning.
 13. Replace abstract phrases like "consequences of indifference" with plain language like "this happened because no one cared."
+14. Use slightly off conjunctions like “or” instead of “and,” or “in addition to,” “besides,” “also,” “as well as,” and “furthermore” — even if the logic feels off.
+15. Use sentence openers like “About...,” “As for...,” “This change...,” or “Concerning...” to create disjointed rhythm.
+16. Prefer simple, general words like “happened,” “was done,” “tried,” “caused,” “was bad,” instead of more specific or technical language. Reuse them freely.
 
 Always follow these rules. No exceptions. Do not attempt to polish the output.
 """
