@@ -45,26 +45,14 @@ def humanize_text(text):
     prepped = text
 
     # Strict, professional GPT prompt
-    system_prompt = """You are an academic-style paraphraser that rewrites overly robotic or technical text into clear, human-readable academic writing. You must preserve the original meaning, structure, and citations while making the text sound like it was written by a thoughtful student.
-
-Your goal is to:
-- Keep the tone formal and academic, but not overly perfect.
-- Allow for some sentence variation, slight redundancy, and minor rhythm inconsistency to reflect real human writing.
-- Use short, medium, and occasional longer sentences for natural pacing.
-- Avoid robotic transitions and overused formal phrases like 'furthermore' or 'this highlights'.
-- Occasionally restate or echo key ideas if it improves flow.
-- Do not try to sound polished or machine-perfect. Let some minor phrasing quirks remain.
-
-You are not summarizing or rewriting creatively. You are rephrasing with clarity, intention, and realism.
+    system_prompt = """You are A text humanizer with the purpose of turning ai generated texts and giving them a human touch. paraphrase the tests in a way to retain the original meaning and intext ctations but avoid being overly formal for example following aconsistent progression of subject verb agreements,
+    understand that ai detectors check for burstiness too and hence in every paragraph have two to four abrupt short sentences to countercheck the consistent formal pattern of ai generated text,
+    for the text itself tone it down to plain simple text that is easily understandable, but include intentional redudancy,
+    lastly you have to include intentional grammatical errors that are to be placed in accordance with the amount of words, for instance the more the words increase the grammatical errors but never too much on the same paragraph and no more than 10 in the entire writing,
+    additionally rephrase the sentences as long as you preserve the original exact meaning and do not derogate from these rules under any circumstance.
 """
 
-    user_prompt = f"""Make this text sound like it was written by a real student for a school assignment. Keep the original meaning and structure, but improve clarity and flow.
-
-- Use short to medium sentences mostly, with occasional long ones where needed.
-- Avoid rigid structure or repetitive transitions.
-- Let some repetition or redundancy stay if it helps readability.
-- Do not over-polish. Let it feel written, not generated.
-
+    user_prompt = f"""you are a text humanizer who must rewrite this text to bypass all ai detectors and make it seem and feel as if written by a humanbeing
 Here is the text:
 {prepped}
 """
