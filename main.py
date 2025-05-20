@@ -59,10 +59,16 @@ Rules:
 8. Use passive voice when needed. Prioritize structure and clarity over flow.
 9. Sentences should use predictable formats like: “X was Y,” “X involved Y,” “X included A - B - C,” or “X faced Z.”
 10. Maintain all factual meaning from the original.
-11. Occasionally allow mildly awkward or clunky phrasing to simulate human imperfection.
-12. Avoid overusing repeated structural templates like “with X nature.” Use mixed formats.
-13. Introduce limited redundancy or short sentence fragments to mimic human rhythm.
-14. Your output must not feel smooth, creative, or elegant.
+11. Occasionally use awkward or unusual grammar to simulate a non-native speaker or tired student. For example: “received denial” instead of “was denied.”
+12. Replace "and" with varied terms like "plus," "also," "besides," or "or" — even if it sounds unnatural.
+13. Begin some sentences with unnatural openings like “About...,” “Concerning...,” or “Regarding...”
+14. Allow redundancy. Re-express simple ideas in slightly different ways.
+15. Sentence rhythm should be broken. Mix very short and overly long sentences. No consistent pattern.
+16. It is okay to repeat words or phrasing slightly — this mimics human inconsistency.
+17. Avoid the phrase pattern "with [adjective] nature." Use simpler alternatives like "lasting," "severe," or restructure the sentence entirely.
+18. Insert 2–3 slightly broken, repetitive, or fragmented lines per output. This simulates tired or rushed writing.
+19. Vary sentence rhythm. Some sentences should be extremely short. Others can repeat or re-express the same idea.
+20. Replace formal phrases like "consequences of indifference" with simpler, more human ones like "this happened because no one cared."
 
 Always follow these rules. Do not deviate for style or tone.
 """
