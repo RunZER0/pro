@@ -5,7 +5,7 @@ import textstat
 import re
 
 # Set OpenAI API key via Streamlit secret
-
+openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 # Session states for persistence
 if "human_output" not in st.session_state:
