@@ -73,7 +73,7 @@ Text to humanize:
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
         ],
-        temperature=0.0,
+        temperature=0.3,
         max_tokens=1600
     )
 
